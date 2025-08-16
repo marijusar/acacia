@@ -1,0 +1,91 @@
+services:
+  dashboard-api:
+    build:
+      context: .
+      dockerfile: docker/dashboard.Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./services/dashboard-api:/app/services/dashboard-api
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/acacia_db
+    restart: unless-stopped
+    networks:
+      - dashboard-network
+    command : "pnpm --dir ./services/dashboard-api dev"
+    develop :
+      watch:
+          - action: restart
+            path: ./services/dashboard-api
+            target: /app/services/dashboard-api
+            ignore:
+              - node_modules/
+          - action: rebuild
+            path: ./services/dashboard-api/package.json
+            target: /app
+            ignore:
+              - node_modules/
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+    restart: unless-stopped
+    networks:
+      - dashboard-network
+    command: "pnpm --dir ./services/frontend dev"
+    develop:
+      watch:
+        - action: sync
+          path: ./services/frontend/
+          target: /app/services/frontend
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./services/frontend/package.json
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      - POSTGRES_DB=acacia_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dashboard-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dashboard-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  dashboard-network:
+    driver: bridge
