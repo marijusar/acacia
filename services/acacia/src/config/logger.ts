@@ -1,7 +1,6 @@
-export type Logger = {
-  debug: (message: string, context: unknown) => void
-  info: (message: string, context: unknown) => void
-  warn: (message: string, context: unknown) => void
-  error: (message: string, context: unknown) => void
-}
+import pino from "pino";
+
+const logger = pino()
+
+export default logger
 

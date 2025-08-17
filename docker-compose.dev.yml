@@ -6,25 +6,28 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./services/dashboard-api:/app/services/dashboard-api
+      - ./services/acacia:/app/services/acacia
       - /app/node_modules
     environment:
       - NODE_ENV=development
       - PORT=3000
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/acacia_db
+      - DEBUG_COLORS=true
+      - TERM=xterm-256color
+      - COLORTERM=truecolor
     restart: unless-stopped
     networks:
       - dashboard-network
-    command : "pnpm --dir ./services/dashboard-api dev"
+    command : "pnpm --dir ./services/acacia dev"
     develop :
       watch:
           - action: restart
-            path: ./services/dashboard-api
-            target: /app/services/dashboard-api
+            path: ./services/acacia
+            target: /app/services/acacia
             ignore:
               - node_modules/
           - action: rebuild
-            path: ./services/dashboard-api/package.json
+            path: ./services/acacia/package.json
             target: /app
             ignore:
               - node_modules/

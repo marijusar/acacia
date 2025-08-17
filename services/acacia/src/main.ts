@@ -9,8 +9,8 @@ const app = express()
 app.use(pinoHttp())
 
 app.get('/health', (_request, response) => {
-  _request.log.info("log")
-  response.send("Ok nice! ")
+  _request.log.warn("log")
+  response.send("Ok nicesu!")
 })
 
 app.listen(port)

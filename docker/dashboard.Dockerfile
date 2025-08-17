@@ -6,12 +6,12 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
 COPY package.json pnpm-workspace.yaml ./
-COPY services/dashboard-api/package.json ./services/dashboard-api/
+COPY services/acacia/package.json ./services/acacia/package.json
 COPY pnpm-lock.yaml* ./
 
 RUN corepack prepare pnpm@8.15.0 --activate
 RUN corepack enable pnpm && \
-    pnpm install --frozen-lockfile --filter=dashboard-api
+    pnpm install --frozen-lockfile --filter=acacia
 
 # COPY services/dashboard-api/ ./ # Commented out for development - files are mounted via volume
 
