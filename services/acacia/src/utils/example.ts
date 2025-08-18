@@ -1,6 +1,5 @@
 export const returnsTrue = () => {
-  const x = true
+  const x = true;
 
-  return x
-}
-
+  return x;
+};

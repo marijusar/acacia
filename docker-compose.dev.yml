@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: docker/dashboard.Dockerfile
     ports:
-      - "3000:3000"
+      - '3000:3000'
     volumes:
       - ./services/acacia:/app/services/acacia
       - /app/node_modules
@@ -18,32 +18,32 @@ services:
     restart: unless-stopped
     networks:
       - dashboard-network
-    command : "pnpm --dir ./services/acacia dev"
-    develop :
+    command: 'pnpm --dir ./services/acacia dev'
+    develop:
       watch:
-          - action: restart
-            path: ./services/acacia
-            target: /app/services/acacia
-            ignore:
-              - node_modules/
-          - action: rebuild
-            path: ./services/acacia/package.json
-            target: /app
-            ignore:
-              - node_modules/
+        - action: restart
+          path: ./services/acacia
+          target: /app/services/acacia
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./services/acacia/package.json
+          target: /app
+          ignore:
+            - node_modules/
 
   frontend:
     build:
       context: .
       dockerfile: docker/frontend.Dockerfile
     ports:
-      - "5173:5173"
+      - '5173:5173'
     environment:
       - NODE_ENV=development
     restart: unless-stopped
     networks:
       - dashboard-network
-    command: "pnpm --dir ./services/frontend dev"
+    command: 'pnpm --dir ./services/frontend dev'
     develop:
       watch:
         - action: sync

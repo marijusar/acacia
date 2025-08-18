@@ -9,11 +9,10 @@
     "node": ">=18.0.0",
     "pnpm": ">=8.0.0"
   },
-  "scripts" : {
-    "dev:start" : "docker compose -f docker-compose.dev.yml watch",
-    "dev:stop" : "docker compose -f docker-compose.dev.yml down",
-    "logs:follow" : "docker compose -f docker-compose.dev.yml logs --follow dashboard-api frontend"
-
+  "scripts": {
+    "dev:start": "docker compose -f docker-compose.dev.yml watch",
+    "dev:stop": "docker compose -f docker-compose.dev.yml down",
+    "logs:follow": "docker compose -f docker-compose.dev.yml logs --follow dashboard-api frontend"
   },
   "packageManager": "pnpm@8.15.0"
 }
