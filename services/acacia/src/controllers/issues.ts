@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { database } from '#dashboard-api/config/database.ts';
 import { IssuesModel } from '#dashboard-api/models/issues.ts';
 import { AppError } from '#dashboard-api/errors/app-error.ts';

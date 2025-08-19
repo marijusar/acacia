@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from '#dashboard-api/errors/app-error.ts';
 
@@ -35,4 +35,3 @@ export const errorHandler = (
     error: 'Internal server error',
   });
 };
-

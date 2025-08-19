@@ -5,10 +5,10 @@ export async function up(database: Kysely<any>): Promise<void> {
   await database.schema
     .createTable('issues')
     .addColumn('id', 'bigserial', (c) => c.primaryKey())
-    .addColumn('name', 'text')
+    .addColumn('name', 'text', (c) => c.notNull())
     .addColumn('description', 'text')
-    .addColumn('created_at', 'timestamptz')
-    .addColumn('updated_at', 'timestamptz')
+    .addColumn('created_at', 'timestamptz', (c) => c.notNull())
+    .addColumn('updated_at', 'timestamptz', (c) => c.notNull())
     .execute();
 }
 
