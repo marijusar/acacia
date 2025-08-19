@@ -5,6 +5,7 @@ import parser from '@typescript-eslint/parser';
 export default [
   {
     files: ['**/*.ts', '**/*.tsx'],
+    ignores: ['migrations/**'],
     languageOptions: {
       parser: parser,
       parserOptions: {
