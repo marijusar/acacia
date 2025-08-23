@@ -1,5 +1,5 @@
 {
-  "name": "acacia",
+"name": "acacia",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -16,12 +16,13 @@
     "tsc": "tsc --noEmit"
   },
   "imports": {
-    "#dashboard-api/*": "./src/*"
+    "#acacia/*": "./src/*"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@testcontainers/postgresql": "^11.5.1",
     "@types/express": "^5.0.3",
     "@types/node": "^20",
     "@types/pg": "^8.15.5",

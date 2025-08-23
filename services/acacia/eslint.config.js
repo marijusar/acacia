@@ -22,6 +22,7 @@ export default [
       ...unicorn.configs.recommended.rules,
       ...typescriptEslint.configs.recommended.rules,
       ...typescriptEslint.configs['recommended-requiring-type-checking'].rules,
+      'unicorn/prevent-abbreviations': 'off',
     },
   },
 ];

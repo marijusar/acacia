@@ -1,4 +1,4 @@
-import { returnsTrue } from '#dashboard-api/utils/example.ts';
+import { returnsTrue } from '#acacia/utils/example.ts';
 import { describe, it, expect } from 'vitest';
 
 describe('example', () => {

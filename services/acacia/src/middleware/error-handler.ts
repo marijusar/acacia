@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import { AppError } from '#dashboard-api/errors/app-error.ts';
+import { AppError } from '#acacia/errors/app-error.ts';
 
 export const errorHandler = (
   error: unknown,

@@ -1,20 +1,19 @@
 import type { Request, Response, NextFunction } from 'express';
-import { database } from '#dashboard-api/config/database.ts';
-import { IssuesModel } from '#dashboard-api/models/issues.ts';
-import { AppError } from '#dashboard-api/errors/app-error.ts';
+import { IssuesModel } from '#acacia/models/issues.ts';
+import { AppError } from '#acacia/errors/app-error.ts';
 import {
   createIssueSchema,
   updateIssueSchema,
   issueParametersSchema,
-} from '#dashboard-api/schemas/issues.ts';
+} from '#acacia/schemas/issues.ts';
 
 export const getAllIssues = async (
-  _request: Request,
+  request: Request,
   response: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const issuesModel = new IssuesModel(database);
+    const issuesModel = new IssuesModel(request.acacia.db);
     const issues = await issuesModel.findAll();
     response.json(issues);
   } catch (error) {
@@ -29,7 +28,7 @@ export const getIssueById = async (
 ): Promise<void> => {
   try {
     const { id } = issueParametersSchema.parse(request.params);
-    const issuesModel = new IssuesModel(database);
+    const issuesModel = new IssuesModel(request.acacia.db);
     const issue = await issuesModel.findById(id);
 
     if (!issue) {
@@ -49,7 +48,7 @@ export const createIssue = async (
 ): Promise<void> => {
   try {
     const data = createIssueSchema.parse(request.body);
-    const issuesModel = new IssuesModel(database);
+    const issuesModel = new IssuesModel(request.acacia.db);
     const issue = await issuesModel.create(data);
     response.status(201).json(issue);
   } catch (error) {
@@ -70,7 +69,7 @@ export const updateIssue = async (
       throw new AppError('No fields provided for update', 400);
     }
 
-    const issuesModel = new IssuesModel(database);
+    const issuesModel = new IssuesModel(request.acacia.db);
     const issue = await issuesModel.update(id, data);
 
     if (!issue) {
@@ -90,7 +89,7 @@ export const deleteIssue = async (
 ): Promise<void> => {
   try {
     const { id } = issueParametersSchema.parse(request.params);
-    const issuesModel = new IssuesModel(database);
+    const issuesModel = new IssuesModel(request.acacia.db);
     const deletedIssue = await issuesModel.delete(id);
 
     if (!deletedIssue) {

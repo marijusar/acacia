@@ -5,7 +5,7 @@ import {
   createIssue,
   updateIssue,
   deleteIssue,
-} from '#dashboard-api/controllers/issues.ts';
+} from '#acacia/controllers/issues.ts';
 
 const router = Router();
 
@@ -16,3 +16,4 @@ router.put('/:id', updateIssue);
 router.delete('/:id', deleteIssue);
 
 export default router;
+
