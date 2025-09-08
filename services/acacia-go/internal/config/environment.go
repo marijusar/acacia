@@ -10,12 +10,19 @@ import (
 type Environment struct {
 	Port        string
 	DatabaseURL string
+	Env         string
 }
+
+const (
+	EnvProduction = "production"
+	EnvDev        = "development"
+)
 
 func LoadEnvironment() *Environment {
 	godotenv.Load()
 
 	port := os.Getenv("PORT")
+	env := os.Getenv("ENV")
 	if port == "" {
 		port = "8080"
 	}
@@ -26,7 +33,9 @@ func LoadEnvironment() *Environment {
 	}
 
 	return &Environment{
+		Env:         env,
 		Port:        port,
 		DatabaseURL: databaseURL,
 	}
 }
+

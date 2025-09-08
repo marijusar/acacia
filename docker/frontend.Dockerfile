@@ -5,15 +5,15 @@ WORKDIR /app
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-COPY package.json pnpm-workspace.yaml ./
-COPY services/frontend/package.json ./services/frontend/
-COPY pnpm-lock.yaml* ./
+COPY services/frontend/package.json ./
+COPY services/frontend/package-lock.json* ./
+COPY services/frontend/pnpm-lock.yaml* ./
 
-RUN corepack prepare pnpm@8.15.0 --activate
+RUN corepack prepare pnpm@10.5.2 --activate
 RUN corepack enable pnpm && \
-    pnpm install --frozen-lockfile --filter=@jira-clone/frontend
+    pnpm install --frozen-lockfile
 
-COPY services/frontend/ ./services/frontend/
+COPY services/frontend/ ./
 
 RUN chown -R nodejs:nodejs /app
 USER nodejs

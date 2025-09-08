@@ -1,19 +1,20 @@
 package routes
 
 import (
-	"acacia/internal/controllers"
+	"acacia/internal/api"
+	"acacia/internal/httperr"
 
 	"github.com/go-chi/chi/v5"
 )
 
-func IssuesRoutes(controller *controllers.IssuesController) chi.Router {
+func IssuesRoutes(controller *api.IssuesController) chi.Router {
 	r := chi.NewRouter()
 
-	r.Get("/", controller.GetAllIssues)
-	r.Get("/{id}", controller.GetIssueByID)
-	r.Post("/", controller.CreateIssue)
-	r.Put("/{id}", controller.UpdateIssue)
-	r.Delete("/{id}", controller.DeleteIssue)
+	r.Get("/", httperr.WithCustomErrorHandler(controller.GetAllIssues))
+	r.Get("/{id}", httperr.WithCustomErrorHandler(controller.GetIssueByID))
+	r.Post("/", httperr.WithCustomErrorHandler(controller.CreateIssue))
+	r.Put("/{id}", httperr.WithCustomErrorHandler(controller.UpdateIssue))
+	r.Delete("/{id}", httperr.WithCustomErrorHandler(controller.DeleteIssue))
 
 	return r
 }

@@ -1,37 +1,24 @@
 services:
-  dashboard-api:
+  acacia-go:
     build:
       context: .
-      dockerfile: docker/dashboard.Dockerfile
+      dockerfile: docker/acacia-go.Dockerfile
     ports:
-      - '3000:3000'
+      - '8080:8080'
     volumes:
-      - ./services/acacia:/app/services/acacia
-      - /app/node_modules
-    environment:
-      - NODE_ENV=development
-      - PORT=3000
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/acacia_db
-      - DEBUG_COLORS=true
-      - TERM=xterm-256color
-      - COLORTERM=truecolor
+      - ./services/acacia-go:/app
+      - go_mod_cache:/go/pkg/mod
+    env_file : "./services/acacia-go/.env"
     restart: unless-stopped
     networks:
       - dashboard-network
-    command: 'pnpm --dir ./services/acacia dev'
     develop:
       watch:
         - action: restart
-          path: ./services/acacia
-          target: /app/services/acacia
-          ignore:
-            - node_modules/
-        - action: rebuild
-          path: ./services/acacia/package.json
+          path: ./services/acacia-go
           target: /app
           ignore:
-            - node_modules/
-
+            - bin/
   frontend:
     build:
       context: .
@@ -43,12 +30,11 @@ services:
     restart: unless-stopped
     networks:
       - dashboard-network
-    command: 'pnpm --dir ./services/frontend dev'
     develop:
       watch:
         - action: sync
           path: ./services/frontend/
-          target: /app/services/frontend
+          target: /app
           ignore:
             - node_modules/
         - action: rebuild
@@ -88,6 +74,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  go_mod_cache:
 
 networks:
   dashboard-network:
