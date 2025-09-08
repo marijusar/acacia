@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"acacia/internal/api"
-	"acacia/internal/httperr"
+	"acacia/packages/api"
+	"acacia/packages/httperr"
 
 	"github.com/go-chi/chi/v5"
 )

@@ -3,8 +3,8 @@ package main
 import (
 	"database/sql"
 
-	"acacia/internal/config"
-	"acacia/internal/db"
+	"acacia/packages/config"
+	"acacia/packages/db"
 
 	_ "github.com/lib/pq"
 )

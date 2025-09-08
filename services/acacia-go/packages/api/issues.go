@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"acacia/internal/db"
-	"acacia/internal/httperr"
-	"acacia/internal/schemas"
+	"acacia/packages/db"
+	"acacia/packages/httperr"
+	"acacia/packages/schemas"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/sirupsen/logrus"
@@ -31,7 +31,7 @@ func (c *IssuesController) GetAllIssues(w http.ResponseWriter, r *http.Request) 
 	issues, err := c.queries.GetAllIssues(r.Context())
 	if err != nil {
 		c.logger.WithError(err).Error("Failed to get all issues")
-		return httperr.WithStatus(errors.New("Internal server error"), http.StatusInternalServerError)
+		return httperr.WithStatus(errors.New("packages server error"), http.StatusInternalServerError)
 
 	}
 	json.NewEncoder(w).Encode(issues)
@@ -51,7 +51,7 @@ func (c *IssuesController) GetIssueByID(w http.ResponseWriter, r *http.Request) 
 			return httperr.WithStatus(errors.New("Issue not found"), http.StatusNotFound)
 		}
 		c.logger.WithError(err).Error("Failed to get issue by ID")
-		return httperr.WithStatus(errors.New("Internal server error"), http.StatusInternalServerError)
+		return httperr.WithStatus(errors.New("packages server error"), http.StatusInternalServerError)
 	}
 
 	json.NewEncoder(w).Encode(issue)
@@ -77,7 +77,7 @@ func (c *IssuesController) CreateIssue(w http.ResponseWriter, r *http.Request) e
 	issue, err := c.queries.CreateIssue(r.Context(), params)
 	if err != nil {
 		c.logger.WithError(err).Error("Failed to create issue")
-		return httperr.WithStatus(errors.New("Internal server error"), http.StatusInternalServerError)
+		return httperr.WithStatus(errors.New("packages server error"), http.StatusInternalServerError)
 	}
 
 	w.WriteHeader(http.StatusCreated)

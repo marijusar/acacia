@@ -1,9 +1,9 @@
 package config
 
 import (
-	"acacia/internal/api"
-	"acacia/internal/db"
-	"acacia/internal/routes"
+	"acacia/packages/api"
+	"acacia/packages/db"
+	"acacia/packages/routes"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
