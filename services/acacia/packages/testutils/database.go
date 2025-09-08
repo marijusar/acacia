@@ -107,7 +107,7 @@ func (dc *DatabaseContainer) RunMigrations(ctx context.Context) error {
 			return err
 		}
 
-		if d.IsDir() || !strings.HasSuffix(path, ".sql") {
+		if d.IsDir() || !strings.HasSuffix(path, ".up.sql") {
 			return nil
 		}
 
