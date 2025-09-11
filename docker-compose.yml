@@ -1,21 +1,28 @@
 services:
-  acacia-go:
+  acacia:
     build:
       context: .
-      dockerfile: docker/acacia-go.Dockerfile
+      dockerfile: docker/acacia.Dockerfile
+      args:
+        - USER_ID=${USER_ID:-1000}
+        - GROUP_ID=${GROUP_ID:-1000}
     ports:
       - '8080:8080'
     volumes:
-      - ./services/acacia-go:/app
+      - ./services/acacia:/app
       - go_mod_cache:/go/pkg/mod
     env_file : "./services/acacia/.env"
     restart: unless-stopped
     networks:
       - dashboard-network
+    user: "${USER_ID:-1000}:${GROUP_ID:-1000}"
+    depends_on:
+      postgres:
+        condition: service_healthy
     develop:
       watch:
         - action: restart
-          path: ./services/acacia-go
+          path: ./services/acacia
           target: /app
           ignore:
             - bin/
@@ -25,20 +32,13 @@ services:
       dockerfile: docker/frontend.Dockerfile
     ports:
       - '5173:5173'
+    volumes:
+      - ./services/frontend:/app
     environment:
       - NODE_ENV=development
     restart: unless-stopped
     networks:
       - dashboard-network
-    develop:
-      watch:
-        - action: sync
-          path: ./services/frontend/
-          target: /app
-          ignore:
-            - node_modules/
-        - action: rebuild
-          path: ./services/frontend/package.json
   postgres:
     image: postgres:17-alpine
     environment:
