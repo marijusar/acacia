@@ -1,0 +1,28 @@
+meta {
+  name: Get Project by ID
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/projects/1
+  body: none
+  auth: none
+}
+
+params:path {
+  id: 1
+}
+
+docs {
+  Retrieves a specific project by its ID.
+  
+  Path Parameters:
+  - id (int64): The unique identifier of the project
+  
+  Response:
+  - 200: Project object with id, name, created_at, updated_at
+  - 400: Invalid project ID
+  - 404: Project not found
+  - 500: Internal server error
+}

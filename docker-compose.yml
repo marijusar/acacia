@@ -34,6 +34,7 @@ services:
       - '5173:5173'
     volumes:
       - ./services/frontend:/app
+    env_file : "./services/frontend/.env"
     environment:
       - NODE_ENV=development
     restart: unless-stopped

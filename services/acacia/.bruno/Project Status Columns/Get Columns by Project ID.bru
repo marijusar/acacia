@@ -1,0 +1,29 @@
+meta {
+  name: Get Columns by Project ID
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/projects/1/columns
+  body: none
+  auth: none
+}
+
+params:path {
+  project_id: 1
+}
+
+docs {
+  Retrieves all project status columns for a specific project, ordered by position_index.
+  
+  Path Parameters:
+  - project_id (int64): The unique identifier of the project
+  
+  Response:
+  - 200: Array of ProjectStatusColumn objects, each with id, project_id, name, position_index, created_at, updated_at
+  - 400: Invalid project ID
+  - 500: Internal server error
+  
+  Note: Returns empty array if no columns found for the project.
+}

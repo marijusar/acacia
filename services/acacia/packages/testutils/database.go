@@ -99,7 +99,7 @@ func setupDatabaseContainer(ctx context.Context) (*DatabaseContainer, error) {
 
 // RunMigrations executes all SQL files in the schema directory
 func (dc *DatabaseContainer) RunMigrations(ctx context.Context) error {
-	schemaDir := "../../schema"
+	schemaDir := "../../migrations"
 
 	// Read all SQL files from schema directory
 	err := filepath.WalkDir(schemaDir, func(path string, d os.DirEntry, err error) error {

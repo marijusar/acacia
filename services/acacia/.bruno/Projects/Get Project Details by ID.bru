@@ -1,0 +1,28 @@
+meta {
+  name: Get Project Details by ID
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/projects/1/details
+  body: none
+  auth: none
+}
+
+params:path {
+  id: 1
+}
+
+docs {
+  Retrieves a specific project with its status columns by project ID.
+  
+  Path Parameters:
+  - id (int64): The unique identifier of the project
+  
+  Response:
+  - 200: Project object with joined project status columns data
+  - 400: Invalid project ID
+  - 404: Project not found
+  - 500: Internal server error
+}

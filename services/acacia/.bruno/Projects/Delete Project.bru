@@ -1,0 +1,28 @@
+meta {
+  name: Delete Project
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{baseUrl}}/projects/1
+  body: none
+  auth: none
+}
+
+params:path {
+  id: 1
+}
+
+docs {
+  Deletes a project by its ID.
+  
+  Path Parameters:
+  - id (int64): The unique identifier of the project to delete
+  
+  Response:
+  - 204: Project successfully deleted (no content)
+  - 400: Invalid project ID
+  - 404: Project not found
+  - 500: Internal server error
+}

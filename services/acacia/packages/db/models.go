@@ -16,3 +16,19 @@ type Issue struct {
 	CreatedAt   time.Time      `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time      `db:"updated_at" json:"updated_at"`
 }
+
+type Project struct {
+	ID        int64     `db:"id" json:"id"`
+	Name      string    `db:"name" json:"name"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+}
+
+type ProjectStatusColumn struct {
+	ID            int64     `db:"id" json:"id"`
+	ProjectID     int32     `db:"project_id" json:"project_id"`
+	Name          string    `db:"name" json:"name"`
+	PositionIndex int16     `db:"position_index" json:"position_index"`
+	CreatedAt     time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt     time.Time `db:"updated_at" json:"updated_at"`
+}

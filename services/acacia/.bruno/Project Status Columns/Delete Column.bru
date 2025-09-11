@@ -1,0 +1,28 @@
+meta {
+  name: Delete Column
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{baseUrl}}/project-status-columns/1
+  body: none
+  auth: none
+}
+
+params:path {
+  id: 1
+}
+
+docs {
+  Deletes a project status column by its ID.
+  
+  Path Parameters:
+  - id (int64): The unique identifier of the column to delete
+  
+  Response:
+  - 204: Column successfully deleted (no content)
+  - 400: Invalid column ID
+  - 404: Project status column not found
+  - 500: Internal server error
+}

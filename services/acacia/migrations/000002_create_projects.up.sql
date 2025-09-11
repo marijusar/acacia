@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS projects (
 
 CREATE TABLE IF NOT EXISTS project_status_columns (
     id BIGSERIAL PRIMARY KEY,
-    project_id INTEGER references projects(id),
+    project_id INTEGER references projects(id) NOT NULL,
     name VARCHAR(255) NOT NULL,
     position_index SMALLINT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),

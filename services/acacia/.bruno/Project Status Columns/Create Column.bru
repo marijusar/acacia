@@ -1,0 +1,37 @@
+meta {
+  name: Create Column
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/project-status-columns
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "project_id": 1,
+    "name": "To Do",
+    "position_index": 0
+  }
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  Creates a new project status column.
+  
+  Request Body:
+  - project_id (int32, required): The ID of the project this column belongs to
+  - name (string, required): Column name (1-255 characters)
+  - position_index (int16): Position index for ordering (minimum 0)
+  
+  Response:
+  - 201: Created ProjectStatusColumn object with id, project_id, name, position_index, created_at, updated_at
+  - 400: Invalid JSON or validation failed
+  - 500: Internal server error
+}

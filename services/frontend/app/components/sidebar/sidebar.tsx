@@ -22,14 +22,18 @@ const items = [
   },
 ];
 
-export function AppSidebar() {
+type AppSidebarProps = {
+  name: string;
+};
+
+export function AppSidebar({ name }: AppSidebarProps) {
   return (
     <SidebarProvider className="max-w-(--sidebar-width)">
       <Sidebar>
         <SidebarContent>
-          <SidebarHeader>My Project</SidebarHeader>
+          <SidebarHeader></SidebarHeader>
           <SidebarGroup>
-            <SidebarGroupLabel></SidebarGroupLabel>
+            <SidebarGroupLabel>{name}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {items.map((item) => (

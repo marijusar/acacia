@@ -29,5 +29,4 @@ func main() {
 	s := config.NewServer(queries, logger)
 
 	s.ListenAndServe(env.Port)
-
 }

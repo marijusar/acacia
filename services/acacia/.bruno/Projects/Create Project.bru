@@ -1,0 +1,33 @@
+meta {
+  name: Create Project
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/projects
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "New Project"
+  }
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  Creates a new project.
+  
+  Request Body:
+  - name (string, required): Project name (1-255 characters)
+  
+  Response:
+  - 201: Created project object with id, name, created_at, updated_at
+  - 400: Invalid JSON or validation failed
+  - 500: Internal server error
+}

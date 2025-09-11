@@ -1,0 +1,43 @@
+meta {
+  name: Update Column
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/project-status-columns/1
+  body: json
+  auth: none
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "name": "In Progress",
+    "position_index": 1
+  }
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  Updates an existing project status column by its ID.
+  
+  Path Parameters:
+  - id (int64): The unique identifier of the column
+  
+  Request Body:
+  - name (string, required): Updated column name (1-255 characters)
+  - position_index (int16): Updated position index for ordering (minimum 0)
+  
+  Response:
+  - 200: Updated ProjectStatusColumn object with id, project_id, name, position_index, created_at, updated_at
+  - 400: Invalid column ID, invalid JSON, or validation failed
+  - 404: Project status column not found
+  - 500: Internal server error
+}

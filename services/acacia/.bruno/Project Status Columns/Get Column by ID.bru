@@ -1,0 +1,28 @@
+meta {
+  name: Get Column by ID
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/project-status-columns/1
+  body: none
+  auth: none
+}
+
+params:path {
+  id: 1
+}
+
+docs {
+  Retrieves a specific project status column by its ID.
+  
+  Path Parameters:
+  - id (int64): The unique identifier of the column
+  
+  Response:
+  - 200: ProjectStatusColumn object with id, project_id, name, position_index, created_at, updated_at
+  - 400: Invalid column ID
+  - 404: Project status column not found
+  - 500: Internal server error
+}

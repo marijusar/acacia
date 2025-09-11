@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { TicketCard } from '../ticket-card/ticket-card';
 import { Heading4 } from '../ui/headings';
+import type { ProjectStatusColumn } from '~/schemas/projects';
 
-export const DashboardColumn = () => {
+type DashboardColumnProps = ProjectStatusColumn;
+
+export const DashboardColumn = ({ name }: DashboardColumnProps) => {
   const [isDragTargetOver, setIsDragTargetOver] = useState(false);
   return (
     <div
@@ -12,7 +15,7 @@ export const DashboardColumn = () => {
       onDragOver={(e) => e.preventDefault()}
       className="h-full max-w-64 w-full bg-card mr-8 rounded-md border p-3 border-accent"
     >
-      <Heading4 className="mb-6">To Do</Heading4>
+      <Heading4 className="mb-6">{name}</Heading4>
       {isDragTargetOver ? <p>Target over here</p> : null}
       <TicketCard />
     </div>
