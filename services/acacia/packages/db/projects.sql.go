@@ -7,7 +7,6 @@ package db
 
 import (
 	"context"
-	"time"
 )
 
 const createProject = `-- name: CreateProject :one
@@ -63,41 +62,36 @@ func (q *Queries) GetProjectByID(ctx context.Context, id int64) (Project, error)
 	return i, err
 }
 
-const getProjectDetailsByProjectID = `-- name: GetProjectDetailsByProjectID :one
-SELECT projects.id, projects.name, projects.created_at, projects.updated_at, project_status_columns.id, project_id, project_status_columns.name, position_index, project_status_columns.created_at, project_status_columns.updated_at FROM projects
-JOIN project_status_columns on project_status_columns.project_id = projects.id 
-WHERE projects.id = $1
+const getProjects = `-- name: GetProjects :many
+SELECT id, name, created_at, updated_at FROM projects
 `
 
-type GetProjectDetailsByProjectIDRow struct {
-	ID            int64     `db:"id" json:"id"`
-	Name          string    `db:"name" json:"name"`
-	CreatedAt     time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt     time.Time `db:"updated_at" json:"updated_at"`
-	ID_2          int64     `db:"id_2" json:"id_2"`
-	ProjectID     int32     `db:"project_id" json:"project_id"`
-	Name_2        string    `db:"name_2" json:"name_2"`
-	PositionIndex int16     `db:"position_index" json:"position_index"`
-	CreatedAt_2   time.Time `db:"created_at_2" json:"created_at_2"`
-	UpdatedAt_2   time.Time `db:"updated_at_2" json:"updated_at_2"`
-}
-
-func (q *Queries) GetProjectDetailsByProjectID(ctx context.Context, id int64) (GetProjectDetailsByProjectIDRow, error) {
-	row := q.db.QueryRowContext(ctx, getProjectDetailsByProjectID, id)
-	var i GetProjectDetailsByProjectIDRow
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.ID_2,
-		&i.ProjectID,
-		&i.Name_2,
-		&i.PositionIndex,
-		&i.CreatedAt_2,
-		&i.UpdatedAt_2,
-	)
-	return i, err
+func (q *Queries) GetProjects(ctx context.Context) ([]Project, error) {
+	rows, err := q.db.QueryContext(ctx, getProjects)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Project
+	for rows.Next() {
+		var i Project
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateProject = `-- name: UpdateProject :one

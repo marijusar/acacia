@@ -10,6 +10,7 @@ import (
 func ProjectsRoutes(controller *api.ProjectsController) chi.Router {
 	r := chi.NewRouter()
 
+	r.Get("/", httperr.WithCustomErrorHandler(controller.GetProjects))
 	r.Get("/{id}", httperr.WithCustomErrorHandler(controller.GetProjectByID))
 	r.Get("/{id}/details", httperr.WithCustomErrorHandler(controller.GetProjectDetailsByID))
 	r.Post("/", httperr.WithCustomErrorHandler(controller.CreateProject))

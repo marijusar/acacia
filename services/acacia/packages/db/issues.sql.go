@@ -12,8 +12,9 @@ import (
 
 const createIssue = `-- name: CreateIssue :one
 INSERT INTO issues (name, description, created_at, updated_at)
-VALUES ($1, $2, NOW(), NOW())
-RETURNING id, name, description, created_at, updated_at
+    VALUES ($1, $2, NOW(), NOW())
+RETURNING
+    id, name, description, created_at, updated_at, column_id
 `
 
 type CreateIssueParams struct {
@@ -30,32 +31,29 @@ func (q *Queries) CreateIssue(ctx context.Context, arg CreateIssueParams) (Issue
 		&i.Description,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ColumnID,
 	)
 	return i, err
 }
 
-const deleteIssue = `-- name: DeleteIssue :one
+const deleteIssue = `-- name: DeleteIssue :exec
 DELETE FROM issues
-WHERE id = $1
-RETURNING id, name, description, created_at, updated_at
+WHERE
+    id = $1
 `
 
-func (q *Queries) DeleteIssue(ctx context.Context, id int64) (Issue, error) {
-	row := q.db.QueryRowContext(ctx, deleteIssue, id)
-	var i Issue
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Description,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+func (q *Queries) DeleteIssue(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteIssue, id)
+	return err
 }
 
 const getAllIssues = `-- name: GetAllIssues :many
-SELECT id, name, description, created_at, updated_at FROM issues
-ORDER BY created_at DESC
+SELECT
+    id, name, description, created_at, updated_at, column_id
+FROM
+    issues
+ORDER BY
+    created_at DESC
 `
 
 func (q *Queries) GetAllIssues(ctx context.Context) ([]Issue, error) {
@@ -73,6 +71,7 @@ func (q *Queries) GetAllIssues(ctx context.Context) ([]Issue, error) {
 			&i.Description,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ColumnID,
 		); err != nil {
 			return nil, err
 		}
@@ -88,8 +87,12 @@ func (q *Queries) GetAllIssues(ctx context.Context) ([]Issue, error) {
 }
 
 const getIssueByID = `-- name: GetIssueByID :one
-SELECT id, name, description, created_at, updated_at FROM issues
-WHERE id = $1
+SELECT
+    id, name, description, created_at, updated_at, column_id
+FROM
+    issues
+WHERE
+    id = $1
 `
 
 func (q *Queries) GetIssueByID(ctx context.Context, id int64) (Issue, error) {
@@ -101,17 +104,41 @@ func (q *Queries) GetIssueByID(ctx context.Context, id int64) (Issue, error) {
 		&i.Description,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ColumnID,
 	)
 	return i, err
 }
 
+const reassignIssuesFromColumn = `-- name: ReassignIssuesFromColumn :exec
+UPDATE
+    issues
+SET
+    column_id = $1
+WHERE
+    column_id = $2
+`
+
+type ReassignIssuesFromColumnParams struct {
+	TargetColumn int64 `db:"target_column" json:"target_column"`
+	SourceColumn int64 `db:"source_column" json:"source_column"`
+}
+
+func (q *Queries) ReassignIssuesFromColumn(ctx context.Context, arg ReassignIssuesFromColumnParams) error {
+	_, err := q.db.ExecContext(ctx, reassignIssuesFromColumn, arg.TargetColumn, arg.SourceColumn)
+	return err
+}
+
 const updateIssue = `-- name: UpdateIssue :one
-UPDATE issues
-SET name = $2,
+UPDATE
+    issues
+SET
+    name = $2,
     description = $3,
     updated_at = NOW()
-WHERE id = $1
-RETURNING id, name, description, created_at, updated_at
+WHERE
+    id = $1
+RETURNING
+    id, name, description, created_at, updated_at, column_id
 `
 
 type UpdateIssueParams struct {
@@ -129,6 +156,7 @@ func (q *Queries) UpdateIssue(ctx context.Context, arg UpdateIssueParams) (Issue
 		&i.Description,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ColumnID,
 	)
 	return i, err
 }

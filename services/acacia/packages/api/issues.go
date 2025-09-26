@@ -127,7 +127,7 @@ func (c *IssuesController) DeleteIssue(w http.ResponseWriter, r *http.Request) e
 		return httperr.WithStatus(errors.New("Invalid issue ID"), http.StatusBadRequest)
 	}
 
-	_, err = c.queries.DeleteIssue(r.Context(), id)
+	err = c.queries.DeleteIssue(r.Context(), id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return httperr.WithStatus(errors.New("Issue not found"), http.StatusNotFound)

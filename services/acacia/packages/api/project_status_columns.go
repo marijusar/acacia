@@ -4,12 +4,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"acacia/packages/db"
 	"acacia/packages/httperr"
 	"acacia/packages/schemas"
+	"acacia/packages/services"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
@@ -17,16 +19,18 @@ import (
 )
 
 type ProjectStatusColumnsController struct {
-	queries   *db.Queries
-	logger    *logrus.Logger
-	validator *validator.Validate
+	queries                    *db.Queries
+	logger                     *logrus.Logger
+	validator                  *validator.Validate
+	projectStatusColumnService *services.ProjectStatusColumnService
 }
 
-func NewProjectStatusColumnsController(queries *db.Queries, logger *logrus.Logger) *ProjectStatusColumnsController {
+func NewProjectStatusColumnsController(queries *db.Queries, logger *logrus.Logger, database *sql.DB) *ProjectStatusColumnsController {
 	return &ProjectStatusColumnsController{
-		queries:   queries,
-		logger:    logger,
-		validator: validator.New(),
+		queries:                    queries,
+		logger:                     logger,
+		validator:                  validator.New(),
+		projectStatusColumnService: services.NewProjectStatusColumnService(queries, database),
 	}
 }
 
@@ -46,29 +50,10 @@ func (c *ProjectStatusColumnsController) GetProjectStatusColumnsByProjectID(w ht
 	return nil
 }
 
-func (c *ProjectStatusColumnsController) GetProjectStatusColumnByID(w http.ResponseWriter, r *http.Request) error {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		return httperr.WithStatus(errors.New("Invalid column ID"), http.StatusBadRequest)
-	}
-
-	column, err := c.queries.GetProjectStatusColumnByID(r.Context(), id)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return httperr.WithStatus(errors.New("Project status column not found"), http.StatusNotFound)
-		}
-		c.logger.WithError(err).Error("Failed to get project status column by ID")
-		return httperr.WithStatus(errors.New("Internal server error"), http.StatusInternalServerError)
-	}
-
-	json.NewEncoder(w).Encode(column)
-	return nil
-}
-
 func (c *ProjectStatusColumnsController) CreateProjectStatusColumn(w http.ResponseWriter, r *http.Request) error {
 	var req schemas.CreateProjectStatusColumnInput
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		fmt.Println(err)
 		return httperr.WithStatus(errors.New("Invalid JSON"), http.StatusBadRequest)
 	}
 
@@ -77,9 +62,8 @@ func (c *ProjectStatusColumnsController) CreateProjectStatusColumn(w http.Respon
 	}
 
 	params := db.CreateProjectStatusColumnParams{
-		ProjectID:     req.ProjectID,
-		Name:          req.Name,
-		PositionIndex: req.PositionIndex,
+		ProjectID: req.ProjectID,
+		Name:      req.Name,
 	}
 
 	column, err := c.queries.CreateProjectStatusColumn(r.Context(), params)
@@ -135,10 +119,13 @@ func (c *ProjectStatusColumnsController) DeleteProjectStatusColumn(w http.Respon
 		return httperr.WithStatus(errors.New("Invalid column ID"), http.StatusBadRequest)
 	}
 
-	_, err = c.queries.DeleteProjectStatusColumn(r.Context(), id)
+	_, err = c.projectStatusColumnService.DeleteProjectStatusColumnWithReorder(r.Context(), id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return httperr.WithStatus(errors.New("Project status column not found"), http.StatusNotFound)
+		}
+		if errors.Is(err, services.ErrCannotDeleteLastColumn) {
+			return httperr.WithStatus(err, http.StatusBadRequest)
 		}
 		c.logger.WithError(err).Error("Failed to delete project status column")
 		return httperr.WithStatus(errors.New("Internal server error"), http.StatusInternalServerError)
@@ -147,4 +134,3 @@ func (c *ProjectStatusColumnsController) DeleteProjectStatusColumn(w http.Respon
 	w.WriteHeader(http.StatusNoContent)
 	return nil
 }
-

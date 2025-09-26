@@ -11,18 +11,23 @@ import (
 
 const createProjectStatusColumn = `-- name: CreateProjectStatusColumn :one
 INSERT INTO project_status_columns (project_id, name, position_index, created_at, updated_at)
-VALUES ($1, $2, $3, NOW(), NOW())
-RETURNING id, project_id, name, position_index, created_at, updated_at
+    VALUES ($1, $2, COALESCE((
+            SELECT
+                MAX(position_index + 1)
+            FROM project_status_columns
+            WHERE
+                project_id = $1), 0), NOW(), NOW())
+RETURNING
+    id, project_id, name, position_index, created_at, updated_at
 `
 
 type CreateProjectStatusColumnParams struct {
-	ProjectID     int32  `db:"project_id" json:"project_id"`
-	Name          string `db:"name" json:"name"`
-	PositionIndex int16  `db:"position_index" json:"position_index"`
+	ProjectID int32  `db:"project_id" json:"project_id"`
+	Name      string `db:"name" json:"name"`
 }
 
 func (q *Queries) CreateProjectStatusColumn(ctx context.Context, arg CreateProjectStatusColumnParams) (ProjectStatusColumn, error) {
-	row := q.db.QueryRowContext(ctx, createProjectStatusColumn, arg.ProjectID, arg.Name, arg.PositionIndex)
+	row := q.db.QueryRowContext(ctx, createProjectStatusColumn, arg.ProjectID, arg.Name)
 	var i ProjectStatusColumn
 	err := row.Scan(
 		&i.ID,
@@ -38,7 +43,8 @@ func (q *Queries) CreateProjectStatusColumn(ctx context.Context, arg CreateProje
 const deleteProjectStatusColumn = `-- name: DeleteProjectStatusColumn :one
 DELETE FROM project_status_columns
 WHERE id = $1
-RETURNING id, project_id, name, position_index, created_at, updated_at
+RETURNING
+    id, project_id, name, position_index, created_at, updated_at
 `
 
 func (q *Queries) DeleteProjectStatusColumn(ctx context.Context, id int64) (ProjectStatusColumn, error) {
@@ -56,8 +62,13 @@ func (q *Queries) DeleteProjectStatusColumn(ctx context.Context, id int64) (Proj
 }
 
 const getAllProjectStatusColumns = `-- name: GetAllProjectStatusColumns :many
-SELECT id, project_id, name, position_index, created_at, updated_at FROM project_status_columns
-ORDER BY project_id, position_index
+SELECT
+    id, project_id, name, position_index, created_at, updated_at
+FROM
+    project_status_columns
+ORDER BY
+    project_id,
+    position_index
 `
 
 func (q *Queries) GetAllProjectStatusColumns(ctx context.Context) ([]ProjectStatusColumn, error) {
@@ -90,9 +101,36 @@ func (q *Queries) GetAllProjectStatusColumns(ctx context.Context) ([]ProjectStat
 	return items, nil
 }
 
+const getNextColumnForReassignment = `-- name: GetNextColumnForReassignment :one
+SELECT
+    id
+FROM
+    project_status_columns
+WHERE
+    project_id = $1
+    AND position_index = $2+ 1
+LIMIT 1
+`
+
+type GetNextColumnForReassignmentParams struct {
+	ProjectID     int32 `db:"project_id" json:"project_id"`
+	PositionIndex int16 `db:"+position_index" json:"+position_index"`
+}
+
+func (q *Queries) GetNextColumnForReassignment(ctx context.Context, arg GetNextColumnForReassignmentParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getNextColumnForReassignment, arg.ProjectID, arg.PositionIndex)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getProjectStatusColumnByID = `-- name: GetProjectStatusColumnByID :one
-SELECT id, project_id, name, position_index, created_at, updated_at FROM project_status_columns
-WHERE id = $1
+SELECT
+    id, project_id, name, position_index, created_at, updated_at
+FROM
+    project_status_columns
+WHERE
+    id = $1
 `
 
 func (q *Queries) GetProjectStatusColumnByID(ctx context.Context, id int64) (ProjectStatusColumn, error) {
@@ -109,10 +147,31 @@ func (q *Queries) GetProjectStatusColumnByID(ctx context.Context, id int64) (Pro
 	return i, err
 }
 
+const getProjectStatusColumnCountByProjectID = `-- name: GetProjectStatusColumnCountByProjectID :one
+SELECT
+    COUNT(*)
+FROM
+    project_status_columns
+WHERE
+    project_id = $1
+`
+
+func (q *Queries) GetProjectStatusColumnCountByProjectID(ctx context.Context, projectID int32) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getProjectStatusColumnCountByProjectID, projectID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getProjectStatusColumnsByProjectID = `-- name: GetProjectStatusColumnsByProjectID :many
-SELECT id, project_id, name, position_index, created_at, updated_at FROM project_status_columns
-WHERE project_id = $1
-ORDER BY position_index
+SELECT
+    id, project_id, name, position_index, created_at, updated_at
+FROM
+    project_status_columns
+WHERE
+    project_id = $1
+ORDER BY
+    position_index
 `
 
 func (q *Queries) GetProjectStatusColumnsByProjectID(ctx context.Context, projectID int32) ([]ProjectStatusColumn, error) {
@@ -145,13 +204,37 @@ func (q *Queries) GetProjectStatusColumnsByProjectID(ctx context.Context, projec
 	return items, nil
 }
 
+const shiftColumnsLeft = `-- name: ShiftColumnsLeft :exec
+UPDATE
+    project_status_columns
+SET
+    position_index = position_index - 1
+WHERE
+    project_id = $1
+    AND position_index > $2
+`
+
+type ShiftColumnsLeftParams struct {
+	ProjectID     int32 `db:"project_id" json:"project_id"`
+	PositionIndex int16 `db:"position_index" json:"position_index"`
+}
+
+func (q *Queries) ShiftColumnsLeft(ctx context.Context, arg ShiftColumnsLeftParams) error {
+	_, err := q.db.ExecContext(ctx, shiftColumnsLeft, arg.ProjectID, arg.PositionIndex)
+	return err
+}
+
 const updateProjectStatusColumn = `-- name: UpdateProjectStatusColumn :one
-UPDATE project_status_columns
-SET name = $2,
+UPDATE
+    project_status_columns
+SET
+    name = $2,
     position_index = $3,
     updated_at = NOW()
-WHERE id = $1
-RETURNING id, project_id, name, position_index, created_at, updated_at
+WHERE
+    id = $1
+RETURNING
+    id, project_id, name, position_index, created_at, updated_at
 `
 
 type UpdateProjectStatusColumnParams struct {

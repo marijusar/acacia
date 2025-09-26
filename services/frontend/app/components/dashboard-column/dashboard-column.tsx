@@ -9,11 +9,11 @@ export const DashboardColumn = ({ name }: DashboardColumnProps) => {
   const [isDragTargetOver, setIsDragTargetOver] = useState(false);
   return (
     <div
-      onDrop={(e) => setIsDragTargetOver(false)}
-      onDragEnter={(e) => setIsDragTargetOver(true)}
-      onDragLeave={(e) => setIsDragTargetOver(false)}
+      onDrop={() => setIsDragTargetOver(false)}
+      onDragEnter={() => setIsDragTargetOver(true)}
+      onDragLeave={() => setIsDragTargetOver(false)}
       onDragOver={(e) => e.preventDefault()}
-      className="h-full max-w-64 w-full bg-card mr-8 rounded-md border p-3 border-accent"
+      className="h-full min-w-64 w-full bg-card mr-8 rounded-md border p-3 border-accent"
     >
       <Heading4 className="mb-6">{name}</Heading4>
       {isDragTargetOver ? <p>Target over here</p> : null}

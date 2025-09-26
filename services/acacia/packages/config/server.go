@@ -5,6 +5,7 @@ import (
 	"acacia/packages/db"
 	"acacia/packages/routes"
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"time"
@@ -14,16 +15,21 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type Database struct {
+	Queries *db.Queries
+	Conn    *sql.DB
+}
+
 type Server struct {
 	httpServer *http.Server
-	db         *db.Queries
+	db         *Database
 	logger     *logrus.Logger
 }
 
-func NewServer(q *db.Queries, l *logrus.Logger) *Server {
-	issuesController := api.NewIssuesController(q, l)
-	projectsController := api.NewProjectsController(q, l)
-	projectColumnsController := api.NewProjectStatusColumnsController(q, l)
+func NewServer(d *Database, l *logrus.Logger) *Server {
+	issuesController := api.NewIssuesController(d.Queries, l)
+	projectsController := api.NewProjectsController(d.Queries, l)
+	projectColumnsController := api.NewProjectStatusColumnsController(d.Queries, l, d.Conn)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -39,7 +45,7 @@ func NewServer(q *db.Queries, l *logrus.Logger) *Server {
 
 	server := &Server{
 		httpServer: httpServer,
-		db:         q,
+		db:         d,
 		logger:     l,
 	}
 

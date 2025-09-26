@@ -7,7 +7,7 @@ type DashboardColumnsProps = {
 
 export const DashboardColumns = ({ columns }: DashboardColumnsProps) => {
   return (
-    <div className="flex w-full flex-1 ">
+    <div className="flex min-w-full flex-1 ml-auto mr-auto">
       {columns.map((column) => (
         <DashboardColumn {...column} key={column.id} />
       ))}

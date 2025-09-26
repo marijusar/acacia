@@ -1,15 +1,16 @@
 CREATE TABLE IF NOT EXISTS projects (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    id bigserial PRIMARY KEY,
+    name varchar(255) NOT NULL,
+    created_at timestamp NOT NULL DEFAULT NOW(),
+    updated_at timestamp NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS project_status_columns (
-    id BIGSERIAL PRIMARY KEY,
-    project_id INTEGER references projects(id) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    position_index SMALLINT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    id bigserial PRIMARY KEY,
+    project_id integer REFERENCES projects (id) NOT NULL,
+    name varchar(255) NOT NULL,
+    position_index smallint NOT NULL,
+    created_at timestamp NOT NULL DEFAULT NOW(),
+    updated_at timestamp NOT NULL DEFAULT NOW()
 );
+

@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"acacia/packages/config"
 	"acacia/packages/db"
 	"acacia/packages/schemas"
 	"acacia/packages/testutils"
@@ -34,8 +35,12 @@ func TestCreateProject(t *testing.T) {
 
 		// Set up queries and server
 		queries := db.New(testDB.DB)
+		database := &config.Database{
+			Queries: queries,
+			Conn:    testDB.DB,
+		}
 		logger := logrus.New()
-		server, err := testutils.NewTestServer(queries, logger)
+		server, err := testutils.NewTestServer(database, logger)
 
 		require.NoError(t, err)
 
@@ -84,8 +89,12 @@ func TestCreateProject(t *testing.T) {
 
 		// Set up queries and server
 		queries := db.New(testDB.DB)
+		database := &config.Database{
+			Queries: queries,
+			Conn:    testDB.DB,
+		}
 		logger := logrus.New()
-		server, err := testutils.NewTestServer(queries, logger)
+		server, err := testutils.NewTestServer(database, logger)
 
 		require.NoError(t, err)
 		err = server.StartServer()
@@ -113,8 +122,12 @@ func TestCreateProject(t *testing.T) {
 
 		// Set up queries and server
 		queries := db.New(testDB.DB)
+		database := &config.Database{
+			Queries: queries,
+			Conn:    testDB.DB,
+		}
 		logger := logrus.New()
-		server, err := testutils.NewTestServer(queries, logger)
+		server, err := testutils.NewTestServer(database, logger)
 
 		require.NoError(t, err)
 		// Start server in goroutine
@@ -150,8 +163,12 @@ func TestCreateProject(t *testing.T) {
 
 		// Set up queries and server
 		queries := db.New(testDB.DB)
+		database := &config.Database{
+			Queries: queries,
+			Conn:    testDB.DB,
+		}
 		logger := logrus.New()
-		server, err := testutils.NewTestServer(queries, logger)
+		server, err := testutils.NewTestServer(database, logger)
 
 		require.NoError(t, err)
 		// Start server in goroutine
@@ -192,8 +209,12 @@ func TestGetProjectByID(t *testing.T) {
 
 		// Set up queries and server
 		queries := db.New(testDB.DB)
+		database := &config.Database{
+			Queries: queries,
+			Conn:    testDB.DB,
+		}
 		logger := logrus.New()
-		server, err := testutils.NewTestServer(queries, logger)
+		server, err := testutils.NewTestServer(database, logger)
 
 		require.NoError(t, err)
 
@@ -251,8 +272,12 @@ func TestGetProjectByID(t *testing.T) {
 
 		// Set up queries and server
 		queries := db.New(testDB.DB)
+		database := &config.Database{
+			Queries: queries,
+			Conn:    testDB.DB,
+		}
 		logger := logrus.New()
-		server, err := testutils.NewTestServer(queries, logger)
+		server, err := testutils.NewTestServer(database, logger)
 
 		require.NoError(t, err)
 		err = server.StartServer()
@@ -280,8 +305,12 @@ func TestGetProjectByID(t *testing.T) {
 
 		// Set up queries and server
 		queries := db.New(testDB.DB)
+		database := &config.Database{
+			Queries: queries,
+			Conn:    testDB.DB,
+		}
 		logger := logrus.New()
-		server, err := testutils.NewTestServer(queries, logger)
+		server, err := testutils.NewTestServer(database, logger)
 
 		require.NoError(t, err)
 		err = server.StartServer()
@@ -299,5 +328,135 @@ func TestGetProjectByID(t *testing.T) {
 
 		// Assert response status
 		assert.Equal(t, http.StatusBadRequest, getResp.StatusCode)
+	})
+}
+
+func TestGetProjects(t *testing.T) {
+	ctx := context.Background()
+
+	// Get the global database container
+	dbContainer, err := testutils.GetGlobalDatabaseContainer(ctx)
+	require.NoError(t, err)
+
+	t.Run("should get all projects successfully", func(t *testing.T) {
+		// Create a fresh test database
+		testDB, err := dbContainer.CreateNewDatabase(ctx)
+		require.NoError(t, err)
+		defer testDB.Destroy(ctx)
+
+		// Set up queries and server
+		queries := db.New(testDB.DB)
+		database := &config.Database{
+			Queries: queries,
+			Conn:    testDB.DB,
+		}
+		logger := logrus.New()
+		server, err := testutils.NewTestServer(database, logger)
+
+		require.NoError(t, err)
+
+		// Start server in goroutine
+		err = server.StartServer()
+		require.NoError(t, err)
+		defer server.Close()
+
+		// Wait for server to start
+		time.Sleep(100 * time.Millisecond)
+
+		// Create some test projects
+		projects := []string{"Project 1", "Project 2", "Project 3"}
+		createdProjects := make([]db.Project, 0, len(projects))
+
+		for _, projectName := range projects {
+			createReq := schemas.CreateProjectInput{
+				Name: projectName,
+			}
+			reqBody, err := json.Marshal(createReq)
+			require.NoError(t, err)
+
+			// Create project
+			createURL := fmt.Sprintf("%s%s", server.GetURL(), "/projects")
+			createResp, err := http.Post(createURL, "application/json", bytes.NewBuffer(reqBody))
+			require.NoError(t, err)
+			defer createResp.Body.Close()
+
+			var createdProject db.Project
+			err = json.NewDecoder(createResp.Body).Decode(&createdProject)
+			require.NoError(t, err)
+			createdProjects = append(createdProjects, createdProject)
+		}
+
+		// Now get all projects
+		getURL := fmt.Sprintf("%s/projects", server.GetURL())
+		getResp, err := http.Get(getURL)
+		require.NoError(t, err)
+		defer getResp.Body.Close()
+
+		// Assert response status
+		assert.Equal(t, http.StatusOK, getResp.StatusCode)
+
+		// Parse response body
+		var retrievedProjects []db.Project
+		err = json.NewDecoder(getResp.Body).Decode(&retrievedProjects)
+		require.NoError(t, err)
+
+		// Assert response body
+		assert.Len(t, retrievedProjects, 3)
+
+		// Check that all created projects are in the response
+		for _, created := range createdProjects {
+			found := false
+			for _, retrieved := range retrievedProjects {
+				if created.ID == retrieved.ID {
+					assert.Equal(t, created.Name, retrieved.Name)
+					assert.Equal(t, created.CreatedAt, retrieved.CreatedAt)
+					assert.Equal(t, created.UpdatedAt, retrieved.UpdatedAt)
+					found = true
+					break
+				}
+			}
+			assert.True(t, found, "Created project with ID %d should be found in response", created.ID)
+		}
+	})
+
+	t.Run("should return empty array when no projects exist", func(t *testing.T) {
+		// Create a fresh test database
+		testDB, err := dbContainer.CreateNewDatabase(ctx)
+		require.NoError(t, err)
+		defer testDB.Destroy(ctx)
+
+		// Set up queries and server
+		queries := db.New(testDB.DB)
+		database := &config.Database{
+			Queries: queries,
+			Conn:    testDB.DB,
+		}
+		logger := logrus.New()
+		server, err := testutils.NewTestServer(database, logger)
+
+		require.NoError(t, err)
+		err = server.StartServer()
+		require.NoError(t, err)
+		defer server.Close()
+
+		// Wait for server to start
+		time.Sleep(100 * time.Millisecond)
+
+		// Get all projects (should be empty)
+		getURL := fmt.Sprintf("%s/projects", server.GetURL())
+		getResp, err := http.Get(getURL)
+		require.NoError(t, err)
+		defer getResp.Body.Close()
+
+		// Assert response status
+		assert.Equal(t, http.StatusOK, getResp.StatusCode)
+
+		// Parse response body
+		var retrievedProjects []db.Project
+		err = json.NewDecoder(getResp.Body).Decode(&retrievedProjects)
+		require.NoError(t, err)
+
+		// Assert response body is empty array
+		assert.Len(t, retrievedProjects, 0)
 	})
 }

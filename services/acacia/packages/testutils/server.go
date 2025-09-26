@@ -2,7 +2,6 @@ package testutils
 
 import (
 	"acacia/packages/config"
-	"acacia/packages/db"
 	"errors"
 	"fmt"
 	"strconv"
@@ -98,8 +97,8 @@ func returnPort(port int) error {
 
 // NewTestServer creates a new test server with automatic port allocation
 // Accepts the same parameters as config.NewServer: db.Queries and logrus.Logger
-func NewTestServer(q *db.Queries, l *logrus.Logger) (*TestServer, error) {
-	server := config.NewServer(q, l)
+func NewTestServer(d *config.Database, l *logrus.Logger) (*TestServer, error) {
+	server := config.NewServer(d, l)
 	port, err := getPort()
 
 	if err != nil {

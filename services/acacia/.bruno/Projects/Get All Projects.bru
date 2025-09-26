@@ -1,0 +1,19 @@
+meta {
+  name: Get All Projects
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/projects
+  body: none
+  auth: none
+}
+
+docs {
+  Retrieves all projects from the database.
+  
+  Response:
+  - 200: Array of project objects, each with id, name, created_at, updated_at
+  - 500: Internal server error
+}

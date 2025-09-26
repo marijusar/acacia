@@ -5,21 +5,20 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/project-status-columns
+  url: {{baseUrl}}/project-columns
   body: json
   auth: none
 }
 
-body:json {
-  {
-    "project_id": 1,
-    "name": "To Do",
-    "position_index": 0
-  }
-}
-
 headers {
   Content-Type: application/json
+}
+
+body:json {
+  {
+    "project_id": 2,
+    "name": "Done"
+  }
 }
 
 docs {

@@ -1,4 +1,4 @@
-import { Inbox } from 'lucide-react';
+import { Cog, Inbox, MessageCircle } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -8,44 +8,73 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarProvider,
 } from '../ui/sidebar';
-import { Avatar, AvatarImage } from '../ui/avatar';
 import { NavUser } from '../nav-user/nav-user';
+import { ProjectSwitcher } from '../project-switcher/project-switcher';
+import type { Project } from '~/schemas/projects';
+import { CollapsibleItem } from './collapsible-item';
+import { DefaultItem } from './default-item';
+
 const items = [
   {
     title: 'Board',
-    url: '#',
+    url: (id: number) => `/projects/board/${id}`,
     icon: Inbox,
+  },
+
+  {
+    title: 'Chat',
+    url: (id: number) => `/projects/board/${id}/chat`,
+    icon: MessageCircle,
+  },
+  {
+    title: 'Settings',
+    url: (id: number) => `/projects/board/${id}/settings`,
+    icon: Cog,
+    items: [
+      {
+        title: 'Columns',
+        url: (id: number) => `/projects/board/${id}/settings/columns`,
+      },
+    ],
   },
 ];
 
 type AppSidebarProps = {
-  name: string;
+  projectName: string;
+  projectId: number;
+  projects: Project[];
 };
 
-export function AppSidebar({ name }: AppSidebarProps) {
+export function AppSidebar({
+  projectName,
+  projectId,
+  projects,
+}: AppSidebarProps) {
   return (
     <SidebarProvider className="max-w-(--sidebar-width)">
       <Sidebar>
         <SidebarContent>
-          <SidebarHeader></SidebarHeader>
+          <SidebarHeader>
+            <ProjectSwitcher projects={projects} />
+          </SidebarHeader>
           <SidebarGroup>
-            <SidebarGroupLabel>{name}</SidebarGroupLabel>
+            <SidebarGroupLabel>{projectName}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <a className="bg-primary" href={item.url}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {items.map((item, i) =>
+                  item.items && item.items.length > 0 ? (
+                    <CollapsibleItem {...item} projectId={projectId} key={i} />
+                  ) : (
+                    <DefaultItem
+                      {...item}
+                      icon={<item.icon />}
+                      projectId={projectId}
+                      key={i}
+                    />
+                  )
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

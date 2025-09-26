@@ -123,12 +123,27 @@ func (c *ProjectsController) GetProjectDetailsByID(w http.ResponseWriter, r *htt
 
 	projectColumns, err := c.queries.GetProjectStatusColumnsByProjectID(r.Context(), int32(id))
 
+	if projectColumns == nil {
+		projectColumns = []db.ProjectStatusColumn{}
+	}
+
 	resp := schemas.GetProjectDetailsResponse{
 		Project: project,
 		Columns: projectColumns,
 	}
 
 	json.NewEncoder(w).Encode(resp)
+	return nil
+}
+
+func (c *ProjectsController) GetProjects(w http.ResponseWriter, r *http.Request) error {
+	projects, err := c.queries.GetProjects(r.Context())
+	if err != nil {
+		c.logger.WithError(err).Error("Failed to get projects")
+		return httperr.WithStatus(errors.New("Internal server error"), http.StatusInternalServerError)
+	}
+
+	json.NewEncoder(w).Encode(projects)
 	return nil
 }
 

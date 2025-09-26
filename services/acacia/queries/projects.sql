@@ -1,3 +1,6 @@
+-- name: GetProjects :many 
+SELECT * FROM projects;
+
 -- name: GetProjectByID :one
 SELECT * FROM projects
 WHERE id = $1;

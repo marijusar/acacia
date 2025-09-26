@@ -97,23 +97,23 @@ func TestExampleUsage(t *testing.T) {
 
 		// For example, insert some test data
 		_, err = testDB.DB.ExecContext(ctx,
-			"INSERT INTO issues (name, description) VALUES ($1, $2)",
-			"Test Issue", "This is a test issue")
+			"INSERT INTO projects (name, created_at, updated_at) VALUES ($1, NOW(), NOW())",
+			"Test Project")
 		if err != nil {
 			t.Fatalf("Failed to insert test data: %v", err)
 		}
 
 		// Verify the data
-		var name, description string
+		var name string
 		err = testDB.DB.QueryRowContext(ctx,
-			"SELECT name, description FROM issues WHERE name = $1", "Test Issue").
-			Scan(&name, &description)
+			"SELECT name FROM projects WHERE name = $1", "Test Project").
+			Scan(&name)
 		if err != nil {
 			t.Fatalf("Failed to query test data: %v", err)
 		}
 
-		if name != "Test Issue" || description != "This is a test issue" {
-			t.Fatalf("Unexpected data: name=%s, description=%s", name, description)
+		if name != "Test Project" {
+			t.Fatalf("Unexpected data: name=%s", name)
 		}
 	})
 
@@ -127,13 +127,13 @@ func TestExampleUsage(t *testing.T) {
 
 		// This database is clean - no data from the previous test
 		var count int
-		err = testDB.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM issues").Scan(&count)
+		err = testDB.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM projects").Scan(&count)
 		if err != nil {
-			t.Fatalf("Failed to count issues: %v", err)
+			t.Fatalf("Failed to count projects: %v", err)
 		}
 
 		if count != 0 {
-			t.Fatalf("Expected empty database, but found %d issues", count)
+			t.Fatalf("Expected empty database, but found %d projects", count)
 		}
 	})
 }
