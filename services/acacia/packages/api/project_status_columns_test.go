@@ -17,6 +17,7 @@ import (
 )
 
 func TestDeleteProjectStatusColumn(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	// Get the global database container
@@ -24,6 +25,7 @@ func TestDeleteProjectStatusColumn(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("should delete project status column successfully", func(t *testing.T) {
+		t.Parallel()
 		// Create a fresh test database
 		testDB, err := dbContainer.CreateNewDatabase(ctx)
 		require.NoError(t, err)
@@ -89,6 +91,7 @@ func TestDeleteProjectStatusColumn(t *testing.T) {
 	})
 
 	t.Run("should return 400 when trying to delete the last column", func(t *testing.T) {
+		t.Parallel()
 		// Create a fresh test database
 		testDB, err := dbContainer.CreateNewDatabase(ctx)
 		require.NoError(t, err)
@@ -142,6 +145,7 @@ func TestDeleteProjectStatusColumn(t *testing.T) {
 	})
 
 	t.Run("should return 404 for non-existent column", func(t *testing.T) {
+		t.Parallel()
 		// Create a fresh test database
 		testDB, err := dbContainer.CreateNewDatabase(ctx)
 		require.NoError(t, err)
@@ -179,6 +183,7 @@ func TestDeleteProjectStatusColumn(t *testing.T) {
 	})
 
 	t.Run("should return 400 for invalid column ID", func(t *testing.T) {
+		t.Parallel()
 		// Create a fresh test database
 		testDB, err := dbContainer.CreateNewDatabase(ctx)
 		require.NoError(t, err)
@@ -216,6 +221,7 @@ func TestDeleteProjectStatusColumn(t *testing.T) {
 	})
 
 	t.Run("should reorder columns correctly after deletion", func(t *testing.T) {
+		t.Parallel()
 		// Create a fresh test database
 		testDB, err := dbContainer.CreateNewDatabase(ctx)
 		require.NoError(t, err)

@@ -13,7 +13,7 @@ export const DashboardColumn = ({ name }: DashboardColumnProps) => {
       onDragEnter={() => setIsDragTargetOver(true)}
       onDragLeave={() => setIsDragTargetOver(false)}
       onDragOver={(e) => e.preventDefault()}
-      className="h-full min-w-64 w-full bg-card mr-8 rounded-md border p-3 border-accent"
+      className="h-full min-w-64 w-full bg-card mr-8 last:mr-0 rounded-md border p-3 border-accent"
     >
       <Heading4 className="mb-6">{name}</Heading4>
       {isDragTargetOver ? <p>Target over here</p> : null}

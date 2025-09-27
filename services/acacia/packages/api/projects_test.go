@@ -21,6 +21,7 @@ import (
 )
 
 func TestCreateProject(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	// Get the global database container
@@ -28,6 +29,7 @@ func TestCreateProject(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("should create project successfully", func(t *testing.T) {
+		t.Parallel()
 		// Create a fresh test database
 		testDB, err := dbContainer.CreateNewDatabase(ctx)
 		require.NoError(t, err)
@@ -82,6 +84,7 @@ func TestCreateProject(t *testing.T) {
 	})
 
 	t.Run("should return 400 for invalid JSON", func(t *testing.T) {
+		t.Parallel()
 		// Create a fresh test database
 		testDB, err := dbContainer.CreateNewDatabase(ctx)
 		require.NoError(t, err)
@@ -115,6 +118,7 @@ func TestCreateProject(t *testing.T) {
 	})
 
 	t.Run("should return 400 for empty name", func(t *testing.T) {
+		t.Parallel()
 		// Create a fresh test database
 		testDB, err := dbContainer.CreateNewDatabase(ctx)
 		require.NoError(t, err)
@@ -156,6 +160,7 @@ func TestCreateProject(t *testing.T) {
 	})
 
 	t.Run("should return 400 for name that is too long", func(t *testing.T) {
+		t.Parallel()
 		// Create a fresh test database
 		testDB, err := dbContainer.CreateNewDatabase(ctx)
 		require.NoError(t, err)
@@ -195,6 +200,7 @@ func TestCreateProject(t *testing.T) {
 }
 
 func TestGetProjectByID(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	// Get the global database container
@@ -202,6 +208,7 @@ func TestGetProjectByID(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("should get project by ID successfully", func(t *testing.T) {
+		t.Parallel()
 		// Create a fresh test database
 		testDB, err := dbContainer.CreateNewDatabase(ctx)
 		require.NoError(t, err)
@@ -265,6 +272,7 @@ func TestGetProjectByID(t *testing.T) {
 	})
 
 	t.Run("should return 404 for non-existent project", func(t *testing.T) {
+		t.Parallel()
 		// Create a fresh test database
 		testDB, err := dbContainer.CreateNewDatabase(ctx)
 		require.NoError(t, err)
@@ -298,6 +306,7 @@ func TestGetProjectByID(t *testing.T) {
 	})
 
 	t.Run("should return 400 for invalid project ID", func(t *testing.T) {
+		t.Parallel()
 		// Create a fresh test database
 		testDB, err := dbContainer.CreateNewDatabase(ctx)
 		require.NoError(t, err)
@@ -332,6 +341,7 @@ func TestGetProjectByID(t *testing.T) {
 }
 
 func TestGetProjects(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	// Get the global database container
@@ -339,6 +349,7 @@ func TestGetProjects(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("should get all projects successfully", func(t *testing.T) {
+		t.Parallel()
 		// Create a fresh test database
 		testDB, err := dbContainer.CreateNewDatabase(ctx)
 		require.NoError(t, err)
@@ -420,6 +431,7 @@ func TestGetProjects(t *testing.T) {
 	})
 
 	t.Run("should return empty array when no projects exist", func(t *testing.T) {
+		t.Parallel()
 		// Create a fresh test database
 		testDB, err := dbContainer.CreateNewDatabase(ctx)
 		require.NoError(t, err)

@@ -20,13 +20,13 @@ import (
 var (
 	globalContainer *DatabaseContainer
 	containerOnce   sync.Once
+	dbCreationMutex sync.Mutex
 )
 
 // DatabaseContainer wraps the PostgreSQL testcontainer with utility functions
 type DatabaseContainer struct {
 	Container     *postgres.PostgresContainer
 	ConnectionURL string
-	DB            *sql.DB
 }
 
 // TestDatabase represents a template-based test database
@@ -86,13 +86,15 @@ func setupDatabaseContainer(ctx context.Context) (*DatabaseContainer, error) {
 	dbContainer := &DatabaseContainer{
 		Container:     container,
 		ConnectionURL: connStr,
-		DB:            db,
 	}
 
-	// Run migrations
+	// Run migrations using temporary connection
 	if err := dbContainer.RunMigrations(ctx); err != nil {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
+
+	// Close the temporary connection used for migrations
+	db.Close()
 
 	return dbContainer, nil
 }
@@ -101,8 +103,15 @@ func setupDatabaseContainer(ctx context.Context) (*DatabaseContainer, error) {
 func (dc *DatabaseContainer) RunMigrations(ctx context.Context) error {
 	schemaDir := "../../migrations"
 
+	// Create temporary connection for migrations
+	db, err := sql.Open("postgres", dc.ConnectionURL)
+	if err != nil {
+		return fmt.Errorf("failed to connect for migrations: %w", err)
+	}
+	defer db.Close()
+
 	// Read all SQL files from schema directory
-	err := filepath.WalkDir(schemaDir, func(path string, d os.DirEntry, err error) error {
+	err = filepath.WalkDir(schemaDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -118,7 +127,7 @@ func (dc *DatabaseContainer) RunMigrations(ctx context.Context) error {
 		}
 
 		// Execute SQL
-		if _, err := dc.DB.ExecContext(ctx, string(content)); err != nil {
+		if _, err := db.ExecContext(ctx, string(content)); err != nil {
 			return fmt.Errorf("failed to execute migration %s: %w", path, err)
 		}
 
@@ -130,12 +139,25 @@ func (dc *DatabaseContainer) RunMigrations(ctx context.Context) error {
 
 // CreateNewDatabase creates a new test database using the template
 func (dc *DatabaseContainer) CreateNewDatabase(ctx context.Context) (*TestDatabase, error) {
+	// Serialize database creation to avoid "source database is being accessed by other users" error
+	// when multiple tests run in parallel and try to use the same template database
+	dbCreationMutex.Lock()
+	defer dbCreationMutex.Unlock()
+
 	// Generate unique database name
 	dbName := "test_" + strings.ReplaceAll(uuid.New().String(), "-", "_")
 
+	// Create temporary connection to postgres database for database creation
+	tempConnStr := strings.Replace(dc.ConnectionURL, "acacia", "postgres", 1)
+	tempDB, err := sql.Open("postgres", tempConnStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to postgres database: %w", err)
+	}
+	defer tempDB.Close()
+
 	// Create database using template
 	query := fmt.Sprintf(`CREATE DATABASE %s TEMPLATE acacia`, pq.QuoteIdentifier(dbName))
-	if _, err := dc.DB.ExecContext(ctx, query); err != nil {
+	if _, err := tempDB.ExecContext(ctx, query); err != nil {
 		return nil, fmt.Errorf("failed to create test database: %w", err)
 	}
 
@@ -163,9 +185,17 @@ func (td *TestDatabase) Destroy(ctx context.Context) error {
 		td.DB.Close()
 	}
 
+	// Create temporary connection to postgres database for database deletion
+	tempConnStr := strings.Replace(td.container.ConnectionURL, "acacia", "postgres", 1)
+	tempDB, err := sql.Open("postgres", tempConnStr)
+	if err != nil {
+		return fmt.Errorf("failed to connect to postgres database: %w", err)
+	}
+	defer tempDB.Close()
+
 	// Drop database
 	query := fmt.Sprintf(`DROP DATABASE %s`, pq.QuoteIdentifier(td.Name))
-	if _, err := td.container.DB.ExecContext(ctx, query); err != nil {
+	if _, err := tempDB.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("failed to drop test database: %w", err)
 	}
 
@@ -174,9 +204,6 @@ func (td *TestDatabase) Destroy(ctx context.Context) error {
 
 // Close cleans up the database container
 func (dc *DatabaseContainer) Close(ctx context.Context) error {
-	if dc.DB != nil {
-		dc.DB.Close()
-	}
 	if dc.Container != nil {
 		return dc.Container.Terminate(ctx)
 	}

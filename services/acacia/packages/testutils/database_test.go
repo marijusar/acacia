@@ -43,12 +43,7 @@ func TestDatabaseContainer(t *testing.T) {
 		t.Fatal("Database container is not running")
 	}
 
-	// Test basic connection
-	if err := dbContainer.DB.Ping(); err != nil {
-		t.Fatalf("Failed to ping database: %v", err)
-	}
-
-	// Create a new test database
+	// Create a new test database to verify functionality
 	testDB, err := dbContainer.CreateNewDatabase(ctx)
 	if err != nil {
 		t.Fatalf("Failed to create test database: %v", err)
@@ -85,6 +80,7 @@ func TestExampleUsage(t *testing.T) {
 	}
 
 	t.Run("test with fresh database", func(t *testing.T) {
+		t.Parallel()
 		// Create a fresh database for this test
 		testDB, err := dbContainer.CreateNewDatabase(ctx)
 		if err != nil {
@@ -118,6 +114,7 @@ func TestExampleUsage(t *testing.T) {
 	})
 
 	t.Run("another test with fresh database", func(t *testing.T) {
+		t.Parallel()
 		// Each test gets its own fresh database from the same container
 		testDB, err := dbContainer.CreateNewDatabase(ctx)
 		if err != nil {
