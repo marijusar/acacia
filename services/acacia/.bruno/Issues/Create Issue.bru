@@ -1,0 +1,37 @@
+meta {
+  name: Create Issue
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/issues
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "New Issue",
+    "column_id": 7,
+    "description": "Issue description"
+  }
+}
+
+docs {
+  Creates a new issue.
+  
+  Request Body:
+  - name (string, required): Issue name
+  - column_id (number, required): ID of the column this issue belongs to
+  - description (string, optional): Issue description
+  
+  Response:
+  - 201: Created issue object with id, name, column_id, description, created_at, updated_at
+  - 400: Invalid JSON, missing name, or missing column_id
+  - 500: Internal server error
+}

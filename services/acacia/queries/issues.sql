@@ -1,8 +1,10 @@
--- name: GetAllIssues :many
+-- name: GetIssuesByColumnId :many
 SELECT
     *
 FROM
     issues
+WHERE
+    column_id = $1
 ORDER BY
     created_at DESC;
 
@@ -15,8 +17,8 @@ WHERE
     id = $1;
 
 -- name: CreateIssue :one
-INSERT INTO issues (name, description, created_at, updated_at)
-    VALUES ($1, $2, NOW(), NOW())
+INSERT INTO issues (name, column_id, description, created_at, updated_at)
+    VALUES ($1, $2, $3, NOW(), NOW())
 RETURNING
     *;
 
@@ -42,6 +44,5 @@ WHERE
 
 -- name: DeleteIssue :exec
 DELETE FROM issues
-WHERE
-    id = $1;
+WHERE id = $1;
 

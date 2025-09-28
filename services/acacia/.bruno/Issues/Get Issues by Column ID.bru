@@ -1,0 +1,27 @@
+meta {
+  name: Get Issues by Column ID
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/issues/column/{{columnId}}
+  body: none
+  auth: none
+}
+
+params:path {
+  columnId: 1
+}
+
+docs {
+  Gets all issues for a specific column by column ID.
+
+  Path Parameters:
+  - columnId (number, required): The ID of the column
+
+  Response:
+  - 200: Array of issue objects with id, name, column_id, description, created_at, updated_at
+  - 400: Invalid column ID
+  - 500: Internal server error
+}

@@ -20,9 +20,21 @@ export const project = z.object({
 
 export type Project = z.infer<typeof project>;
 
+export const issue = z.object({
+  id: z.number(),
+  column_id: z.number(),
+  name: z.string(),
+  description: z.string().nullable(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export type Issue = z.infer<typeof issue>;
+
 export const projectDetailsResponse = z.object({
   ...project.shape,
   columns: z.array(projectStatusColumn),
+  issues: z.array(issue),
 });
 
 export const projectsResponse = z.array(project);
@@ -56,3 +68,4 @@ export const createProjectColumnParams = z.object({
 export const deleteProjectColumnParams = z.object({
   'project-column-id': z.string().transform((v) => Number(v)),
 });
+

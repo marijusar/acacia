@@ -1,0 +1,28 @@
+meta {
+  name: Delete Issue
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/issues/{{issueId}}
+  body: none
+  auth: none
+}
+
+params:path {
+  issueId: 1
+}
+
+docs {
+  Deletes an issue by its ID.
+
+  Path Parameters:
+  - issueId (number, required): The ID of the issue to delete
+
+  Response:
+  - 204: Issue successfully deleted (no content)
+  - 400: Invalid issue ID
+  - 404: Issue not found
+  - 500: Internal server error
+}

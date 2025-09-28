@@ -6,6 +6,7 @@ import {
   projectsResponse,
   projectColumnsResponse,
   createProjectResponse,
+  Issue,
 } from '@/lib/schemas/projects';
 
 type CreateProjectParams = {
@@ -46,7 +47,22 @@ class ProjectService {
     // sort so columns are in order.
     body.columns.sort((a, b) => a.position_index - b.position_index);
 
-    return body;
+    const issueMap: Record<number, Issue[]> = body.issues.reduce(
+      (acc: Record<number, Issue[]>, issue) => {
+        if (!acc[issue.column_id]) {
+          acc[issue.column_id] = [];
+        }
+        acc[issue.column_id].push(issue);
+
+        return acc;
+      },
+      {}
+    );
+
+    return {
+      ...body,
+      issues: issueMap,
+    };
   });
 
   getProjects = cache(async () => {
@@ -140,4 +156,3 @@ class ProjectService {
 }
 
 export const projectService = new ProjectService(env.ACACIA_API_URL, logger);
-

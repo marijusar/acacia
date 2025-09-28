@@ -123,13 +123,12 @@ func (c *ProjectsController) GetProjectDetailsByID(w http.ResponseWriter, r *htt
 
 	projectColumns, err := c.queries.GetProjectStatusColumnsByProjectID(r.Context(), int32(id))
 
-	if projectColumns == nil {
-		projectColumns = []db.ProjectStatusColumn{}
-	}
+	projectIssues, err := c.queries.GetProjectIssues(r.Context(), int32(id))
 
 	resp := schemas.GetProjectDetailsResponse{
 		Project: project,
 		Columns: projectColumns,
+		Issues:  projectIssues,
 	}
 
 	json.NewEncoder(w).Encode(resp)

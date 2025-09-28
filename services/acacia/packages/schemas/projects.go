@@ -13,5 +13,5 @@ type UpdateProjectInput struct {
 type GetProjectDetailsResponse struct {
 	db.Project
 	Columns []db.ProjectStatusColumn `json:"columns"`
+	Issues  []db.Issue               `json:"issues"`
 }
-

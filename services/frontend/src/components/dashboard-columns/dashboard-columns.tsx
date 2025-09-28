@@ -1,15 +1,28 @@
+import z from 'zod';
 import { DashboardColumn } from '../dashboard-column/dashboard-column';
-import type { ProjectStatusColumn } from '@/lib/schemas/projects';
+import {
+  issue,
+  type Issue,
+  type ProjectStatusColumn,
+} from '@/lib/schemas/projects';
 
 type DashboardColumnsProps = {
   columns: ProjectStatusColumn[];
+  columnIssueMap: Record<number, Issue[]>;
 };
 
-export const DashboardColumns = ({ columns }: DashboardColumnsProps) => {
+export const DashboardColumns = ({
+  columns,
+  columnIssueMap,
+}: DashboardColumnsProps) => {
   return (
     <div className="flex min-w-full flex-1 ml-auto mr-auto">
       {columns.map((column) => (
-        <DashboardColumn {...column} key={column.id} />
+        <DashboardColumn
+          {...column}
+          key={column.id}
+          issues={columnIssueMap[column.id] ?? []}
+        />
       ))}
     </div>
   );

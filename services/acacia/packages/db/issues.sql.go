@@ -7,23 +7,25 @@ package db
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/guregu/null"
 )
 
 const createIssue = `-- name: CreateIssue :one
-INSERT INTO issues (name, description, created_at, updated_at)
-    VALUES ($1, $2, NOW(), NOW())
+INSERT INTO issues (name, column_id, description, created_at, updated_at)
+    VALUES ($1, $2, $3, NOW(), NOW())
 RETURNING
     id, name, description, created_at, updated_at, column_id
 `
 
 type CreateIssueParams struct {
-	Name        string         `db:"name" json:"name"`
-	Description sql.NullString `db:"description" json:"description"`
+	Name        string      `db:"name" json:"name"`
+	ColumnID    int64       `db:"column_id" json:"column_id"`
+	Description null.String `db:"description" json:"description"`
 }
 
 func (q *Queries) CreateIssue(ctx context.Context, arg CreateIssueParams) (Issue, error) {
-	row := q.db.QueryRowContext(ctx, createIssue, arg.Name, arg.Description)
+	row := q.db.QueryRowContext(ctx, createIssue, arg.Name, arg.ColumnID, arg.Description)
 	var i Issue
 	err := row.Scan(
 		&i.ID,
@@ -38,8 +40,7 @@ func (q *Queries) CreateIssue(ctx context.Context, arg CreateIssueParams) (Issue
 
 const deleteIssue = `-- name: DeleteIssue :exec
 DELETE FROM issues
-WHERE
-    id = $1
+WHERE id = $1
 `
 
 func (q *Queries) DeleteIssue(ctx context.Context, id int64) error {
@@ -47,17 +48,42 @@ func (q *Queries) DeleteIssue(ctx context.Context, id int64) error {
 	return err
 }
 
-const getAllIssues = `-- name: GetAllIssues :many
+const getIssueByID = `-- name: GetIssueByID :one
 SELECT
     id, name, description, created_at, updated_at, column_id
 FROM
     issues
+WHERE
+    id = $1
+`
+
+func (q *Queries) GetIssueByID(ctx context.Context, id int64) (Issue, error) {
+	row := q.db.QueryRowContext(ctx, getIssueByID, id)
+	var i Issue
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ColumnID,
+	)
+	return i, err
+}
+
+const getIssuesByColumnId = `-- name: GetIssuesByColumnId :many
+SELECT
+    id, name, description, created_at, updated_at, column_id
+FROM
+    issues
+WHERE
+    column_id = $1
 ORDER BY
     created_at DESC
 `
 
-func (q *Queries) GetAllIssues(ctx context.Context) ([]Issue, error) {
-	rows, err := q.db.QueryContext(ctx, getAllIssues)
+func (q *Queries) GetIssuesByColumnId(ctx context.Context, columnID int64) ([]Issue, error) {
+	rows, err := q.db.QueryContext(ctx, getIssuesByColumnId, columnID)
 	if err != nil {
 		return nil, err
 	}
@@ -84,29 +110,6 @@ func (q *Queries) GetAllIssues(ctx context.Context) ([]Issue, error) {
 		return nil, err
 	}
 	return items, nil
-}
-
-const getIssueByID = `-- name: GetIssueByID :one
-SELECT
-    id, name, description, created_at, updated_at, column_id
-FROM
-    issues
-WHERE
-    id = $1
-`
-
-func (q *Queries) GetIssueByID(ctx context.Context, id int64) (Issue, error) {
-	row := q.db.QueryRowContext(ctx, getIssueByID, id)
-	var i Issue
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Description,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.ColumnID,
-	)
-	return i, err
 }
 
 const reassignIssuesFromColumn = `-- name: ReassignIssuesFromColumn :exec
@@ -142,9 +145,9 @@ RETURNING
 `
 
 type UpdateIssueParams struct {
-	ID          int64          `db:"id" json:"id"`
-	Name        string         `db:"name" json:"name"`
-	Description sql.NullString `db:"description" json:"description"`
+	ID          int64       `db:"id" json:"id"`
+	Name        string      `db:"name" json:"name"`
+	Description null.String `db:"description" json:"description"`
 }
 
 func (q *Queries) UpdateIssue(ctx context.Context, arg UpdateIssueParams) (Issue, error) {

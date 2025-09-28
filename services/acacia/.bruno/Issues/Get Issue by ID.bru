@@ -1,0 +1,28 @@
+meta {
+  name: Get Issue by ID
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/issues/{{issueId}}
+  body: none
+  auth: none
+}
+
+params:path {
+  issueId: 1
+}
+
+docs {
+  Gets a specific issue by its ID.
+
+  Path Parameters:
+  - issueId (number, required): The ID of the issue
+
+  Response:
+  - 200: Issue object with id, name, column_id, description, created_at, updated_at
+  - 400: Invalid issue ID
+  - 404: Issue not found
+  - 500: Internal server error
+}

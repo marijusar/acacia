@@ -16,10 +16,12 @@ export default async function BoardPage({ params }: BoardPageProps) {
     <>
       <div className="flex items-center justify-between mb-8 sticky">
         <Heading1>Sprint 1</Heading1>
-        <CreateTaskDialog />
+        <CreateTaskDialog columns={projectDetails.columns} />
       </div>
-      <DashboardColumns columns={projectDetails.columns} />
+      <DashboardColumns
+        columns={projectDetails.columns}
+        columnIssueMap={projectDetails.issues}
+      />
     </>
   );
 }
-

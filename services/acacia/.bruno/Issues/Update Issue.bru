@@ -1,0 +1,43 @@
+meta {
+  name: Update Issue
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/issues/{{issueId}}
+  body: json
+  auth: none
+}
+
+params:path {
+  issueId: 1
+}
+
+body:json {
+  {
+    "name": "Updated Issue Name",
+    "description": "Updated description"
+  }
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  Updates an existing issue.
+
+  Path Parameters:
+  - issueId (number, required): The ID of the issue to update
+
+  Request Body:
+  - name (string, required): Updated issue name
+  - description (string, optional): Updated issue description
+
+  Response:
+  - 200: Updated issue object with id, name, column_id, description, created_at, updated_at
+  - 400: Invalid JSON, invalid issue ID, or missing name
+  - 404: Issue not found
+  - 500: Internal server error
+}

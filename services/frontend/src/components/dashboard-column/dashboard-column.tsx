@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import { TicketCard } from '../ticket-card/ticket-card';
 import { Heading4 } from '../ui/headings';
-import type { ProjectStatusColumn } from '@/lib/schemas/projects';
+import type { Issue, ProjectStatusColumn } from '@/lib/schemas/projects';
 
-type DashboardColumnProps = ProjectStatusColumn;
+type DashboardColumnProps = ProjectStatusColumn & { issues: Issue[] };
 
-export const DashboardColumn = ({ name }: DashboardColumnProps) => {
+export const DashboardColumn = ({ name, issues }: DashboardColumnProps) => {
   const [isDragTargetOver, setIsDragTargetOver] = useState(false);
   return (
     <div
@@ -19,7 +19,9 @@ export const DashboardColumn = ({ name }: DashboardColumnProps) => {
     >
       <Heading4 className="mb-6">{name}</Heading4>
       {isDragTargetOver ? <p>Target over here</p> : null}
-      <TicketCard />
+      {issues.map((issue) => (
+        <TicketCard {...issue} key={issue.id} />
+      ))}
     </div>
   );
 };

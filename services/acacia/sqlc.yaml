@@ -11,3 +11,25 @@ sql:
         emit_json_tags: true
         emit_db_tags: true
         emit_pointers_for_null_types : false
+        overrides:
+        - db_type: "varchar"
+          nullable: true
+          go_type: "github.com/guregu/null.String"
+        - db_type: "text"
+          nullable: true  
+          go_type: "github.com/guregu/null.String"
+        - db_type: "integer"
+          nullable: true
+          go_type: "github.com/guregu/null.Int"
+        - db_type: "bigint"
+          nullable: true
+          go_type: "github.com/guregu/null.Int"
+        - db_type: "boolean"
+          nullable: true
+          go_type: "github.com/guregu/null.Bool"
+        - db_type: "timestamp"
+          nullable: true
+          go_type: "github.com/guregu/null.Time"
+        - db_type: "date"
+          nullable: true
+          go_type: "github.com/guregu/null.Time"

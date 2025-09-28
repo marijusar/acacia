@@ -5,17 +5,18 @@
 package db
 
 import (
-	"database/sql"
 	"time"
+
+	"github.com/guregu/null"
 )
 
 type Issue struct {
-	ID          int64          `db:"id" json:"id"`
-	Name        string         `db:"name" json:"name"`
-	Description sql.NullString `db:"description" json:"description"`
-	CreatedAt   time.Time      `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time      `db:"updated_at" json:"updated_at"`
-	ColumnID    int64          `db:"column_id" json:"column_id"`
+	ID          int64       `db:"id" json:"id"`
+	Name        string      `db:"name" json:"name"`
+	Description null.String `db:"description" json:"description"`
+	CreatedAt   time.Time   `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time   `db:"updated_at" json:"updated_at"`
+	ColumnID    int64       `db:"column_id" json:"column_id"`
 }
 
 type Project struct {

@@ -1,0 +1,35 @@
+meta {
+  name: Reassign Issues from Column
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{baseUrl}}/issues/reassign
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "source_column": 1,
+    "target_column": 2
+  }
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  Reassigns all issues from one column to another column.
+
+  Request Body:
+  - source_column (number, required): ID of the source column to move issues from
+  - target_column (number, required): ID of the target column to move issues to
+
+  Response:
+  - 204: Issues successfully reassigned (no content)
+  - 400: Invalid JSON, missing source_column, or missing target_column
+  - 500: Internal server error
+}

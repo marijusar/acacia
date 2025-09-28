@@ -12,6 +12,7 @@ import (
 	"acacia/packages/schemas"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/guregu/null"
 	"github.com/sirupsen/logrus"
 )
 
@@ -27,12 +28,17 @@ func NewIssuesController(queries *db.Queries, logger *logrus.Logger) *IssuesCont
 	}
 }
 
-func (c *IssuesController) GetAllIssues(w http.ResponseWriter, r *http.Request) error {
-	issues, err := c.queries.GetAllIssues(r.Context())
+func (c *IssuesController) GetIssuesByColumnId(w http.ResponseWriter, r *http.Request) error {
+	columnIdStr := chi.URLParam(r, "columnId")
+	columnId, err := strconv.ParseInt(columnIdStr, 10, 64)
 	if err != nil {
-		c.logger.WithError(err).Error("Failed to get all issues")
-		return httperr.WithStatus(errors.New("packages server error"), http.StatusInternalServerError)
+		return httperr.WithStatus(errors.New("Invalid column ID"), http.StatusBadRequest)
+	}
 
+	issues, err := c.queries.GetIssuesByColumnId(r.Context(), columnId)
+	if err != nil {
+		c.logger.WithError(err).Error("Failed to get issues by column ID")
+		return httperr.WithStatus(errors.New("packages server error"), http.StatusInternalServerError)
 	}
 	json.NewEncoder(w).Encode(issues)
 	return nil
@@ -71,7 +77,8 @@ func (c *IssuesController) CreateIssue(w http.ResponseWriter, r *http.Request) e
 
 	params := db.CreateIssueParams{
 		Name:        req.Name,
-		Description: stringPtrToNullString(req.Description),
+		ColumnID:    req.ColumnId,
+		Description: null.NewString(*req.Description, true),
 	}
 
 	issue, err := c.queries.CreateIssue(r.Context(), params)
@@ -104,7 +111,7 @@ func (c *IssuesController) UpdateIssue(w http.ResponseWriter, r *http.Request) e
 	params := db.UpdateIssueParams{
 		ID:          id,
 		Name:        req.Name,
-		Description: stringPtrToNullString(req.Description),
+		Description: null.NewString(*req.Description, true),
 	}
 
 	issue, err := c.queries.UpdateIssue(r.Context(), params)
@@ -140,9 +147,23 @@ func (c *IssuesController) DeleteIssue(w http.ResponseWriter, r *http.Request) e
 	return nil
 }
 
-func stringPtrToNullString(s *string) sql.NullString {
-	if s == nil {
-		return sql.NullString{Valid: false}
+func (c *IssuesController) ReassignIssuesFromColumn(w http.ResponseWriter, r *http.Request) error {
+	var req schemas.ReassignIssuesInput
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return httperr.WithStatus(errors.New("Invalid JSON"), http.StatusBadRequest)
 	}
-	return sql.NullString{String: *s, Valid: true}
+
+	params := db.ReassignIssuesFromColumnParams{
+		TargetColumn: req.TargetColumnId,
+		SourceColumn: req.SourceColumnId,
+	}
+
+	err := c.queries.ReassignIssuesFromColumn(r.Context(), params)
+	if err != nil {
+		c.logger.WithError(err).Error("Failed to reassign issues from column")
+		return httperr.WithStatus(errors.New("Internal server error"), http.StatusInternalServerError)
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	return nil
 }

@@ -11,8 +11,9 @@ import (
 
 const createProject = `-- name: CreateProject :one
 INSERT INTO projects (name, created_at, updated_at)
-VALUES ($1, NOW(), NOW())
-RETURNING id, name, created_at, updated_at
+    VALUES ($1, NOW(), NOW())
+RETURNING
+    id, name, created_at, updated_at
 `
 
 func (q *Queries) CreateProject(ctx context.Context, name string) (Project, error) {
@@ -30,7 +31,8 @@ func (q *Queries) CreateProject(ctx context.Context, name string) (Project, erro
 const deleteProject = `-- name: DeleteProject :one
 DELETE FROM projects
 WHERE id = $1
-RETURNING id, name, created_at, updated_at
+RETURNING
+    id, name, created_at, updated_at
 `
 
 func (q *Queries) DeleteProject(ctx context.Context, id int64) (Project, error) {
@@ -46,8 +48,12 @@ func (q *Queries) DeleteProject(ctx context.Context, id int64) (Project, error) 
 }
 
 const getProjectByID = `-- name: GetProjectByID :one
-SELECT id, name, created_at, updated_at FROM projects
-WHERE id = $1
+SELECT
+    id, name, created_at, updated_at
+FROM
+    projects
+WHERE
+    id = $1
 `
 
 func (q *Queries) GetProjectByID(ctx context.Context, id int64) (Project, error) {
@@ -62,8 +68,51 @@ func (q *Queries) GetProjectByID(ctx context.Context, id int64) (Project, error)
 	return i, err
 }
 
+const getProjectIssues = `-- name: GetProjectIssues :many
+SELECT
+    issues.id, issues.name, issues.description, issues.created_at, issues.updated_at, issues.column_id
+FROM
+    project_status_columns
+    JOIN issues ON project_status_columns.id = issues.column_id
+WHERE
+    project_id = $1
+`
+
+func (q *Queries) GetProjectIssues(ctx context.Context, projectID int32) ([]Issue, error) {
+	rows, err := q.db.QueryContext(ctx, getProjectIssues, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Issue
+	for rows.Next() {
+		var i Issue
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ColumnID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getProjects = `-- name: GetProjects :many
-SELECT id, name, created_at, updated_at FROM projects
+SELECT
+    id, name, created_at, updated_at
+FROM
+    projects
 `
 
 func (q *Queries) GetProjects(ctx context.Context) ([]Project, error) {
@@ -95,11 +144,15 @@ func (q *Queries) GetProjects(ctx context.Context) ([]Project, error) {
 }
 
 const updateProject = `-- name: UpdateProject :one
-UPDATE projects
-SET name = $2,
+UPDATE
+    projects
+SET
+    name = $2,
     updated_at = NOW()
-WHERE id = $1
-RETURNING id, name, created_at, updated_at
+WHERE
+    id = $1
+RETURNING
+    id, name, created_at, updated_at
 `
 
 type UpdateProjectParams struct {

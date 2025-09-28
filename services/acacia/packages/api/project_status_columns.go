@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -53,7 +52,6 @@ func (c *ProjectStatusColumnsController) GetProjectStatusColumnsByProjectID(w ht
 func (c *ProjectStatusColumnsController) CreateProjectStatusColumn(w http.ResponseWriter, r *http.Request) error {
 	var req schemas.CreateProjectStatusColumnInput
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		fmt.Println(err)
 		return httperr.WithStatus(errors.New("Invalid JSON"), http.StatusBadRequest)
 	}
 
