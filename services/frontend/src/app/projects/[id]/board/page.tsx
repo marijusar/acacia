@@ -1,7 +1,8 @@
 import { projectService } from '@/lib/services/project-service';
-import { CreateTaskDialog } from '@/components/create-task-dialog/create-task-dialog';
 import { DashboardColumns } from '@/components/dashboard-columns/dashboard-columns';
 import { Heading1 } from '@/components/ui/headings';
+import { Button } from '@/components/ui/button';
+import { CreateTaskDialog } from '@/components/task-dialog';
 
 interface BoardPageProps {
   params: Promise<{ id: string }>;
@@ -14,9 +15,11 @@ export default async function BoardPage({ params }: BoardPageProps) {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-8 sticky">
+      <div className="flex items-center justify-between mb-8 sticky left-0">
         <Heading1>Sprint 1</Heading1>
-        <CreateTaskDialog columns={projectDetails.columns} />
+        <CreateTaskDialog columns={projectDetails.columns}>
+          <Button className="ml-auto">Create task</Button>
+        </CreateTaskDialog>
       </div>
       <DashboardColumns
         columns={projectDetails.columns}

@@ -1,26 +1,45 @@
 'use client';
 
-import { useState } from 'react';
+import { DragEvent } from 'react';
 import { TicketCard } from '../ticket-card/ticket-card';
 import { Heading4 } from '../ui/headings';
-import type { Issue, ProjectStatusColumn } from '@/lib/schemas/projects';
+import {
+  issue,
+  type Issue,
+  type ProjectStatusColumn,
+} from '@/lib/schemas/projects';
+import { updateIssue } from '@/app/actions/issues';
+import { UpdateTaskDialog } from '../task-dialog';
 
-type DashboardColumnProps = ProjectStatusColumn & { issues: Issue[] };
+type DashboardColumnProps = ProjectStatusColumn & {
+  issues: Issue[];
+  columns: ProjectStatusColumn[];
+};
 
-export const DashboardColumn = ({ name, issues }: DashboardColumnProps) => {
-  const [isDragTargetOver, setIsDragTargetOver] = useState(false);
+export const DashboardColumn = ({
+  name,
+  issues = [],
+  id,
+  columns,
+}: DashboardColumnProps) => {
+  const onDrop = async (e: DragEvent<HTMLDivElement>) => {
+    const droppedIssue = issue.parse(
+      JSON.parse(e.dataTransfer.getData('text/plain'))
+    );
+
+    await updateIssue({ ...droppedIssue, column_id: id });
+  };
   return (
     <div
-      onDrop={() => setIsDragTargetOver(false)}
-      onDragEnter={() => setIsDragTargetOver(true)}
-      onDragLeave={() => setIsDragTargetOver(false)}
+      onDrop={onDrop}
       onDragOver={(e) => e.preventDefault()}
       className="h-full min-w-64 w-full bg-card mr-8 last:mr-0 rounded-md border p-3 border-accent"
     >
       <Heading4 className="mb-6">{name}</Heading4>
-      {isDragTargetOver ? <p>Target over here</p> : null}
       {issues.map((issue) => (
-        <TicketCard {...issue} key={issue.id} />
+        <UpdateTaskDialog key={issue.id} columns={columns} issue={issue}>
+          <TicketCard {...issue} />
+        </UpdateTaskDialog>
       ))}
     </div>
   );

@@ -25,8 +25,13 @@ export const issue = z.object({
   column_id: z.number(),
   name: z.string(),
   description: z.string().nullable(),
-  created_at: z.string(),
-  updated_at: z.string(),
+});
+
+export const updateIssueRequestBody = z.object({
+  id: z.string().transform((v) => parseInt(v)),
+  column_id: z.string().transform((v) => parseInt(v)),
+  description: z.string().nullable(),
+  name: z.string(),
 });
 
 export type Issue = z.infer<typeof issue>;
@@ -68,4 +73,3 @@ export const createProjectColumnParams = z.object({
 export const deleteProjectColumnParams = z.object({
   'project-column-id': z.string().transform((v) => Number(v)),
 });
-

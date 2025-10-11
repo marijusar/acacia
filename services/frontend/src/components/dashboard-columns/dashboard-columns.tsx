@@ -1,10 +1,5 @@
-import z from 'zod';
 import { DashboardColumn } from '../dashboard-column/dashboard-column';
-import {
-  issue,
-  type Issue,
-  type ProjectStatusColumn,
-} from '@/lib/schemas/projects';
+import { type Issue, type ProjectStatusColumn } from '@/lib/schemas/projects';
 
 type DashboardColumnsProps = {
   columns: ProjectStatusColumn[];
@@ -21,7 +16,8 @@ export const DashboardColumns = ({
         <DashboardColumn
           {...column}
           key={column.id}
-          issues={columnIssueMap[column.id] ?? []}
+          issues={columnIssueMap[column.id]}
+          columns={columns}
         />
       ))}
     </div>

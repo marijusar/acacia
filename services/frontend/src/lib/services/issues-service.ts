@@ -2,10 +2,18 @@ import { cache } from 'react';
 import { env } from '@/lib/config/env';
 import { logger } from '@/lib/config/logger';
 import { BaseHttpService, BaseServiceArguments } from './base-service';
+import { Issue } from '../schemas/projects';
 
 type CreateIssueParams = {
   name: string;
   column_id: number;
+  description?: string;
+};
+
+type UpdateIssueParms = {
+  id: number;
+  column_id?: number;
+  title?: string;
   description?: string;
 };
 
@@ -53,6 +61,23 @@ class IssuesService extends BaseHttpService {
     const body = await response.json();
 
     return body;
+  }
+
+  async updateIssue(issue: Issue) {
+    const response = await fetch(`${this.url}/issues`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(issue),
+    });
+
+    if (!response.ok) {
+      const body = await response.json();
+      const message = `[CREATE_ISSUE] Failed to update issue`;
+      this.logger.error(message, body);
+      throw new Error(message);
+    }
   }
 }
 
