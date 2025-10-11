@@ -8,14 +8,11 @@ import (
 	"net/http"
 	"strings"
 	"testing"
-	"time"
 
-	"acacia/packages/config"
 	"acacia/packages/db"
 	"acacia/packages/schemas"
 	"acacia/packages/testutils"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,35 +21,10 @@ func TestCreateProject(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	// Get the global database container
-	dbContainer, err := testutils.GetGlobalDatabaseContainer(ctx)
-	require.NoError(t, err)
-
 	t.Run("should create project successfully", func(t *testing.T) {
 		t.Parallel()
-		// Create a fresh test database
-		testDB, err := dbContainer.CreateNewDatabase(ctx)
-		require.NoError(t, err)
-		defer testDB.Destroy(ctx)
-
-		// Set up queries and server
-		queries := db.New(testDB.DB)
-		database := &config.Database{
-			Queries: queries,
-			Conn:    testDB.DB,
-		}
-		logger := logrus.New()
-		server, err := testutils.NewTestServer(database, logger)
-
-		require.NoError(t, err)
-
-		// Start server in goroutine
-		err = server.StartServer()
-		require.NoError(t, err)
-		defer server.Close()
-
-		// Wait for server to start
-		time.Sleep(100 * time.Millisecond)
+		setup := testutils.WithIntegrationTestSetup(ctx, t)
+		defer setup.Cleanup()
 
 		// Prepare request body
 		createReq := schemas.CreateProjectInput{
@@ -63,7 +35,7 @@ func TestCreateProject(t *testing.T) {
 
 		// Make HTTP request to the server
 
-		url := fmt.Sprintf("%s%s", server.GetURL(), "/projects")
+		url := fmt.Sprintf("%s%s", setup.Server.GetURL(), "/projects")
 		resp, err := http.Post(url, "application/json", bytes.NewBuffer(reqBody))
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -85,30 +57,11 @@ func TestCreateProject(t *testing.T) {
 
 	t.Run("should return 400 for invalid JSON", func(t *testing.T) {
 		t.Parallel()
-		// Create a fresh test database
-		testDB, err := dbContainer.CreateNewDatabase(ctx)
-		require.NoError(t, err)
-		defer testDB.Destroy(ctx)
-
-		// Set up queries and server
-		queries := db.New(testDB.DB)
-		database := &config.Database{
-			Queries: queries,
-			Conn:    testDB.DB,
-		}
-		logger := logrus.New()
-		server, err := testutils.NewTestServer(database, logger)
-
-		require.NoError(t, err)
-		err = server.StartServer()
-		require.NoError(t, err)
-		defer server.Close()
-
-		// Wait for server to start
-		time.Sleep(100 * time.Millisecond)
+		setup := testutils.WithIntegrationTestSetup(ctx, t)
+		defer setup.Cleanup()
 
 		// Make HTTP request with invalid JSON
-		url := fmt.Sprintf("%s%s", server.GetURL(), "/projects")
+		url := fmt.Sprintf("%s%s", setup.Server.GetURL(), "/projects")
 		resp, err := http.Post(url, "application/json", bytes.NewBufferString("{invalid json"))
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -119,28 +72,8 @@ func TestCreateProject(t *testing.T) {
 
 	t.Run("should return 400 for empty name", func(t *testing.T) {
 		t.Parallel()
-		// Create a fresh test database
-		testDB, err := dbContainer.CreateNewDatabase(ctx)
-		require.NoError(t, err)
-		defer testDB.Destroy(ctx)
-
-		// Set up queries and server
-		queries := db.New(testDB.DB)
-		database := &config.Database{
-			Queries: queries,
-			Conn:    testDB.DB,
-		}
-		logger := logrus.New()
-		server, err := testutils.NewTestServer(database, logger)
-
-		require.NoError(t, err)
-		// Start server in goroutine
-		err = server.StartServer()
-		require.NoError(t, err)
-		defer server.Close()
-
-		// Wait for server to start
-		time.Sleep(100 * time.Millisecond)
+		setup := testutils.WithIntegrationTestSetup(ctx, t)
+		defer setup.Cleanup()
 
 		// Prepare request body with empty name
 		createReq := schemas.CreateProjectInput{
@@ -150,7 +83,7 @@ func TestCreateProject(t *testing.T) {
 		require.NoError(t, err)
 
 		// Make HTTP request
-		url := fmt.Sprintf("%s%s", server.GetURL(), "/projects")
+		url := fmt.Sprintf("%s%s", setup.Server.GetURL(), "/projects")
 		resp, err := http.Post(url, "application/json", bytes.NewBuffer(reqBody))
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -161,25 +94,8 @@ func TestCreateProject(t *testing.T) {
 
 	t.Run("should return 400 for name that is too long", func(t *testing.T) {
 		t.Parallel()
-		// Create a fresh test database
-		testDB, err := dbContainer.CreateNewDatabase(ctx)
-		require.NoError(t, err)
-		defer testDB.Destroy(ctx)
-
-		// Set up queries and server
-		queries := db.New(testDB.DB)
-		database := &config.Database{
-			Queries: queries,
-			Conn:    testDB.DB,
-		}
-		logger := logrus.New()
-		server, err := testutils.NewTestServer(database, logger)
-
-		require.NoError(t, err)
-		// Start server in goroutine
-		err = server.StartServer()
-		require.NoError(t, err)
-		defer server.Close()
+		setup := testutils.WithIntegrationTestSetup(ctx, t)
+		defer setup.Cleanup()
 
 		// Prepare request body with name that exceeds max length (256 characters)
 		longName := strings.Repeat("a", 256)
@@ -190,7 +106,7 @@ func TestCreateProject(t *testing.T) {
 		require.NoError(t, err)
 
 		// Make HTTP request
-		resp, err := http.Post(server.GetURL()+"/projects", "application/json", bytes.NewBuffer(reqBody))
+		resp, err := http.Post(setup.Server.GetURL()+"/projects", "application/json", bytes.NewBuffer(reqBody))
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -203,35 +119,10 @@ func TestGetProjectByID(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	// Get the global database container
-	dbContainer, err := testutils.GetGlobalDatabaseContainer(ctx)
-	require.NoError(t, err)
-
 	t.Run("should get project by ID successfully", func(t *testing.T) {
 		t.Parallel()
-		// Create a fresh test database
-		testDB, err := dbContainer.CreateNewDatabase(ctx)
-		require.NoError(t, err)
-		defer testDB.Destroy(ctx)
-
-		// Set up queries and server
-		queries := db.New(testDB.DB)
-		database := &config.Database{
-			Queries: queries,
-			Conn:    testDB.DB,
-		}
-		logger := logrus.New()
-		server, err := testutils.NewTestServer(database, logger)
-
-		require.NoError(t, err)
-
-		// Start server in goroutine
-		err = server.StartServer()
-		require.NoError(t, err)
-		defer server.Close()
-
-		// Wait for server to start
-		time.Sleep(100 * time.Millisecond)
+		setup := testutils.WithIntegrationTestSetup(ctx, t)
+		defer setup.Cleanup()
 
 		// First create a project to retrieve
 		createReq := schemas.CreateProjectInput{
@@ -241,7 +132,7 @@ func TestGetProjectByID(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create project
-		createURL := fmt.Sprintf("%s%s", server.GetURL(), "/projects")
+		createURL := fmt.Sprintf("%s%s", setup.Server.GetURL(), "/projects")
 		createResp, err := http.Post(createURL, "application/json", bytes.NewBuffer(reqBody))
 		require.NoError(t, err)
 		defer createResp.Body.Close()
@@ -251,7 +142,7 @@ func TestGetProjectByID(t *testing.T) {
 		require.NoError(t, err)
 
 		// Now get the project by ID
-		getURL := fmt.Sprintf("%s/projects/%d", server.GetURL(), createdProject.ID)
+		getURL := fmt.Sprintf("%s/projects/%d", setup.Server.GetURL(), createdProject.ID)
 		getResp, err := http.Get(getURL)
 		require.NoError(t, err)
 		defer getResp.Body.Close()
@@ -273,30 +164,11 @@ func TestGetProjectByID(t *testing.T) {
 
 	t.Run("should return 404 for non-existent project", func(t *testing.T) {
 		t.Parallel()
-		// Create a fresh test database
-		testDB, err := dbContainer.CreateNewDatabase(ctx)
-		require.NoError(t, err)
-		defer testDB.Destroy(ctx)
-
-		// Set up queries and server
-		queries := db.New(testDB.DB)
-		database := &config.Database{
-			Queries: queries,
-			Conn:    testDB.DB,
-		}
-		logger := logrus.New()
-		server, err := testutils.NewTestServer(database, logger)
-
-		require.NoError(t, err)
-		err = server.StartServer()
-		require.NoError(t, err)
-		defer server.Close()
-
-		// Wait for server to start
-		time.Sleep(100 * time.Millisecond)
+		setup := testutils.WithIntegrationTestSetup(ctx, t)
+		defer setup.Cleanup()
 
 		// Try to get non-existent project
-		getURL := fmt.Sprintf("%s/projects/999999", server.GetURL())
+		getURL := fmt.Sprintf("%s/projects/999999", setup.Server.GetURL())
 		getResp, err := http.Get(getURL)
 		require.NoError(t, err)
 		defer getResp.Body.Close()
@@ -307,30 +179,11 @@ func TestGetProjectByID(t *testing.T) {
 
 	t.Run("should return 400 for invalid project ID", func(t *testing.T) {
 		t.Parallel()
-		// Create a fresh test database
-		testDB, err := dbContainer.CreateNewDatabase(ctx)
-		require.NoError(t, err)
-		defer testDB.Destroy(ctx)
-
-		// Set up queries and server
-		queries := db.New(testDB.DB)
-		database := &config.Database{
-			Queries: queries,
-			Conn:    testDB.DB,
-		}
-		logger := logrus.New()
-		server, err := testutils.NewTestServer(database, logger)
-
-		require.NoError(t, err)
-		err = server.StartServer()
-		require.NoError(t, err)
-		defer server.Close()
-
-		// Wait for server to start
-		time.Sleep(100 * time.Millisecond)
+		setup := testutils.WithIntegrationTestSetup(ctx, t)
+		defer setup.Cleanup()
 
 		// Try to get project with invalid ID
-		getURL := fmt.Sprintf("%s/projects/invalid", server.GetURL())
+		getURL := fmt.Sprintf("%s/projects/invalid", setup.Server.GetURL())
 		getResp, err := http.Get(getURL)
 		require.NoError(t, err)
 		defer getResp.Body.Close()
@@ -344,35 +197,10 @@ func TestGetProjects(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	// Get the global database container
-	dbContainer, err := testutils.GetGlobalDatabaseContainer(ctx)
-	require.NoError(t, err)
-
 	t.Run("should get all projects successfully", func(t *testing.T) {
 		t.Parallel()
-		// Create a fresh test database
-		testDB, err := dbContainer.CreateNewDatabase(ctx)
-		require.NoError(t, err)
-		defer testDB.Destroy(ctx)
-
-		// Set up queries and server
-		queries := db.New(testDB.DB)
-		database := &config.Database{
-			Queries: queries,
-			Conn:    testDB.DB,
-		}
-		logger := logrus.New()
-		server, err := testutils.NewTestServer(database, logger)
-
-		require.NoError(t, err)
-
-		// Start server in goroutine
-		err = server.StartServer()
-		require.NoError(t, err)
-		defer server.Close()
-
-		// Wait for server to start
-		time.Sleep(100 * time.Millisecond)
+		setup := testutils.WithIntegrationTestSetup(ctx, t)
+		defer setup.Cleanup()
 
 		// Create some test projects
 		projects := []string{"Project 1", "Project 2", "Project 3"}
@@ -386,7 +214,7 @@ func TestGetProjects(t *testing.T) {
 			require.NoError(t, err)
 
 			// Create project
-			createURL := fmt.Sprintf("%s%s", server.GetURL(), "/projects")
+			createURL := fmt.Sprintf("%s%s", setup.Server.GetURL(), "/projects")
 			createResp, err := http.Post(createURL, "application/json", bytes.NewBuffer(reqBody))
 			require.NoError(t, err)
 			defer createResp.Body.Close()
@@ -398,7 +226,7 @@ func TestGetProjects(t *testing.T) {
 		}
 
 		// Now get all projects
-		getURL := fmt.Sprintf("%s/projects", server.GetURL())
+		getURL := fmt.Sprintf("%s/projects", setup.Server.GetURL())
 		getResp, err := http.Get(getURL)
 		require.NoError(t, err)
 		defer getResp.Body.Close()
@@ -432,30 +260,11 @@ func TestGetProjects(t *testing.T) {
 
 	t.Run("should return empty array when no projects exist", func(t *testing.T) {
 		t.Parallel()
-		// Create a fresh test database
-		testDB, err := dbContainer.CreateNewDatabase(ctx)
-		require.NoError(t, err)
-		defer testDB.Destroy(ctx)
-
-		// Set up queries and server
-		queries := db.New(testDB.DB)
-		database := &config.Database{
-			Queries: queries,
-			Conn:    testDB.DB,
-		}
-		logger := logrus.New()
-		server, err := testutils.NewTestServer(database, logger)
-
-		require.NoError(t, err)
-		err = server.StartServer()
-		require.NoError(t, err)
-		defer server.Close()
-
-		// Wait for server to start
-		time.Sleep(100 * time.Millisecond)
+		setup := testutils.WithIntegrationTestSetup(ctx, t)
+		defer setup.Cleanup()
 
 		// Get all projects (should be empty)
-		getURL := fmt.Sprintf("%s/projects", server.GetURL())
+		getURL := fmt.Sprintf("%s/projects", setup.Server.GetURL())
 		getResp, err := http.Get(getURL)
 		require.NoError(t, err)
 		defer getResp.Body.Close()

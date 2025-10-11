@@ -1,0 +1,44 @@
+meta {
+  name: Login User
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/users/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "user@example.com",
+    "password": "password123"
+  }
+}
+
+docs {
+  Authenticates a user and sets access-token and refresh-token cookies.
+
+  Request Body:
+  - email (string, required): Valid email address
+  - password (string, required): User password
+
+  Response:
+  - 200: User object with id, email, name, created_at
+    - Sets HttpOnly cookies:
+      - access-token (15 minutes, HS256 JWT with user_id)
+      - refresh-token (30 days, HS256 JWT with user_id + jti, stored in DB)
+  - 400: Invalid JSON or validation error
+  - 401: Invalid email or password
+  - 500: Internal server error
+
+  Security:
+  - Refresh tokens are stored in database with JTI for revocation
+  - Access tokens are stateless JWTs
+  - Both cookies are HttpOnly, Secure, SameSite=Strict
+}

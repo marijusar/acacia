@@ -26,15 +26,16 @@ RETURNING
 UPDATE
     issues
 SET
-    name = $2,
-    description = $3,
+    name = COALESCE(@name, name),
+    description = COALESCE(@description, description),
+    column_id = COALESCE(@column_id, column_id),
     updated_at = NOW()
 WHERE
-    id = $1
+    id = @id
 RETURNING
     *;
 
--- name: ReassignIssuesFromColumn :exec
+-- name: ReassignAllIssuesFromColumn :exec
 UPDATE
     issues
 SET

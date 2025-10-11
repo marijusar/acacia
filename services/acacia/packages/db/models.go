@@ -5,6 +5,7 @@
 package db
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/guregu/null"
@@ -33,4 +34,22 @@ type ProjectStatusColumn struct {
 	PositionIndex int16     `db:"position_index" json:"position_index"`
 	CreatedAt     time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt     time.Time `db:"updated_at" json:"updated_at"`
+}
+
+type RefreshToken struct {
+	ID        int64        `db:"id" json:"id"`
+	UserID    int64        `db:"user_id" json:"user_id"`
+	Jti       string       `db:"jti" json:"jti"`
+	ExpiresAt time.Time    `db:"expires_at" json:"expires_at"`
+	CreatedAt time.Time    `db:"created_at" json:"created_at"`
+	RevokedAt sql.NullTime `db:"revoked_at" json:"revoked_at"`
+}
+
+type User struct {
+	ID           int64     `db:"id" json:"id"`
+	Email        string    `db:"email" json:"email"`
+	Name         string    `db:"name" json:"name"`
+	PasswordHash string    `db:"password_hash" json:"password_hash"`
+	CreatedAt    time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt    time.Time `db:"updated_at" json:"updated_at"`
 }

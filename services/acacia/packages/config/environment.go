@@ -11,6 +11,7 @@ type Environment struct {
 	Port        string
 	DatabaseURL string
 	Env         string
+	JWTSecret   string
 }
 
 const (
@@ -32,10 +33,16 @@ func LoadEnvironment() *Environment {
 		logrus.Fatal("DATABASE_URL environment variable required")
 	}
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		logrus.Fatal("JWT_SECRET environment variable required")
+	}
+
 	return &Environment{
 		Env:         env,
 		Port:        port,
 		DatabaseURL: databaseURL,
+		JWTSecret:   jwtSecret,
 	}
 }
 

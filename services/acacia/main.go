@@ -28,7 +28,7 @@ func main() {
 
 	databaseConn := &config.Database{Queries: queries, Conn: database}
 
-	s := config.NewServer(databaseConn, logger)
+	s := config.NewServer(databaseConn, logger, env)
 
 	s.ListenAndServe(env.Port)
 }

@@ -56,7 +56,7 @@ func (s *ProjectStatusColumnService) DeleteProjectStatusColumnWithReorder(ctx co
 		return nil, fmt.Errorf("failed to get next column: %w", err)
 	}
 
-	err = qtx.ReassignIssuesFromColumn(ctx, db.ReassignIssuesFromColumnParams{
+	err = qtx.ReassignAllIssuesFromColumn(ctx, db.ReassignAllIssuesFromColumnParams{
 		SourceColumn: columnID,
 		TargetColumn: nextColumnID,
 	})
@@ -85,4 +85,3 @@ func (s *ProjectStatusColumnService) DeleteProjectStatusColumnWithReorder(ctx co
 
 	return &deletedColumn, nil
 }
-

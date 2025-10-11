@@ -7,8 +7,10 @@ type CreateIssueInput struct {
 }
 
 type UpdateIssueInput struct {
-	Name        string  `json:"name"`
-	Description *string `json:"description"`
+	ID          int64  `json:"id" validate:"required"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	ColumnId    int64  `json:"column_id"`
 }
 
 type ReassignIssuesInput struct {
@@ -16,3 +18,7 @@ type ReassignIssuesInput struct {
 	TargetColumnId int64 `json:"target_column" validate:"required"`
 }
 
+type ReassignIssueColumn struct {
+	IssueId        int64 `json:"issue_id" validate:"required"`
+	TargetColumnId int64 `json:"target_column" validate:"required"`
+}

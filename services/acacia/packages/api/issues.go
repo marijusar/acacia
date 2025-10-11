@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -93,26 +94,19 @@ func (c *IssuesController) CreateIssue(w http.ResponseWriter, r *http.Request) e
 }
 
 func (c *IssuesController) UpdateIssue(w http.ResponseWriter, r *http.Request) error {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		return httperr.WithStatus(errors.New("Invalid issue ID"), http.StatusBadRequest)
-	}
-
 	var req schemas.UpdateIssueInput
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return httperr.WithStatus(errors.New("Invalid JSON"), http.StatusBadRequest)
 	}
-
-	if req.Name == "" {
-		return httperr.WithStatus(errors.New("Name is required"), http.StatusBadRequest)
-	}
+	fmt.Println(req)
 
 	params := db.UpdateIssueParams{
-		ID:          id,
+		ID:          req.ID,
 		Name:        req.Name,
-		Description: null.NewString(*req.Description, true),
+		Description: null.NewString(req.Description, req.Description != ""),
+		ColumnID:    req.ColumnId,
 	}
+	fmt.Println(params)
 
 	issue, err := c.queries.UpdateIssue(r.Context(), params)
 	if err != nil {
@@ -140,27 +134,6 @@ func (c *IssuesController) DeleteIssue(w http.ResponseWriter, r *http.Request) e
 			return httperr.WithStatus(errors.New("Issue not found"), http.StatusNotFound)
 		}
 		c.logger.WithError(err).Error("Failed to delete issue")
-		return httperr.WithStatus(errors.New("Internal server error"), http.StatusInternalServerError)
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-	return nil
-}
-
-func (c *IssuesController) ReassignIssuesFromColumn(w http.ResponseWriter, r *http.Request) error {
-	var req schemas.ReassignIssuesInput
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return httperr.WithStatus(errors.New("Invalid JSON"), http.StatusBadRequest)
-	}
-
-	params := db.ReassignIssuesFromColumnParams{
-		TargetColumn: req.TargetColumnId,
-		SourceColumn: req.SourceColumnId,
-	}
-
-	err := c.queries.ReassignIssuesFromColumn(r.Context(), params)
-	if err != nil {
-		c.logger.WithError(err).Error("Failed to reassign issues from column")
 		return httperr.WithStatus(errors.New("Internal server error"), http.StatusInternalServerError)
 	}
 

@@ -1,0 +1,38 @@
+meta {
+  name: Register User
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/users/register
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "user@example.com",
+    "name": "John Doe",
+    "password": "password123"
+  }
+}
+
+docs {
+  Registers a new user account.
+
+  Request Body:
+  - email (string, required): Valid email address
+  - name (string, required): User name (1-100 characters)
+  - password (string, required): Password (6-50 characters)
+
+  Response:
+  - 201: Created user object with id, email, name, created_at
+  - 400: Invalid JSON or validation error (invalid email format, name/password length requirements)
+  - 409: Email already registered
+  - 500: Internal server error
+}

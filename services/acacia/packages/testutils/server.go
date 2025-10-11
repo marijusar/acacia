@@ -2,13 +2,17 @@ package testutils
 
 import (
 	"acacia/packages/config"
+	"acacia/packages/db"
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
 	"sync"
+	"testing"
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
 )
 
 type PortManager struct {
@@ -98,7 +102,15 @@ func returnPort(port int) error {
 // NewTestServer creates a new test server with automatic port allocation
 // Accepts the same parameters as config.NewServer: db.Queries and logrus.Logger
 func NewTestServer(d *config.Database, l *logrus.Logger) (*TestServer, error) {
-	server := config.NewServer(d, l)
+	// Create test environment
+	env := &config.Environment{
+		Port:        "8080",
+		DatabaseURL: "test",
+		Env:         "test",
+		JWTSecret:   "test-secret-key-for-testing-only",
+	}
+
+	server := config.NewServer(d, l, env)
 	port, err := getPort()
 
 	if err != nil {
@@ -147,4 +159,55 @@ func (ts *TestServer) Close() {
 	// Return port to pool
 	ts.Server.Close()
 	returnPort(ts.port)
+}
+
+// IntegrationTestSetup encapsulates the common setup for integration tests
+type IntegrationTestSetup struct {
+	Server  *TestServer
+	DB      *TestDatabase
+	Queries *db.Queries
+	Cleanup func()
+}
+
+// WithIntegrationTestSetup sets up a fresh database and server for integration tests
+// It handles all the boilerplate: creating test DB, setting up queries, starting server, etc.
+// Returns a setup struct with server, DB, queries, and a cleanup function that must be called
+func WithIntegrationTestSetup(ctx context.Context, t *testing.T) *IntegrationTestSetup {
+	// Get the global database container
+	dbContainer, err := GetGlobalDatabaseContainer(ctx)
+	require.NoError(t, err)
+
+	// Create a fresh test database
+	testDB, err := dbContainer.CreateNewDatabase(ctx)
+	require.NoError(t, err)
+
+	// Set up queries and server
+	queries := db.New(testDB.DB)
+	database := &config.Database{
+		Queries: queries,
+		Conn:    testDB.DB,
+	}
+	logger := logrus.New()
+	server, err := NewTestServer(database, logger)
+	require.NoError(t, err)
+
+	// Start server
+	err = server.StartServer()
+	require.NoError(t, err)
+
+	// Wait for server to start
+	time.Sleep(100 * time.Millisecond)
+
+	// Create cleanup function
+	cleanup := func() {
+		server.Close()
+		testDB.Destroy(ctx)
+	}
+
+	return &IntegrationTestSetup{
+		Server:  server,
+		DB:      testDB,
+		Queries: queries,
+		Cleanup: cleanup,
+	}
 }

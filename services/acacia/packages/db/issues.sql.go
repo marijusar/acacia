@@ -112,7 +112,7 @@ func (q *Queries) GetIssuesByColumnId(ctx context.Context, columnID int64) ([]Is
 	return items, nil
 }
 
-const reassignIssuesFromColumn = `-- name: ReassignIssuesFromColumn :exec
+const reassignAllIssuesFromColumn = `-- name: ReassignAllIssuesFromColumn :exec
 UPDATE
     issues
 SET
@@ -121,13 +121,13 @@ WHERE
     column_id = $2
 `
 
-type ReassignIssuesFromColumnParams struct {
+type ReassignAllIssuesFromColumnParams struct {
 	TargetColumn int64 `db:"target_column" json:"target_column"`
 	SourceColumn int64 `db:"source_column" json:"source_column"`
 }
 
-func (q *Queries) ReassignIssuesFromColumn(ctx context.Context, arg ReassignIssuesFromColumnParams) error {
-	_, err := q.db.ExecContext(ctx, reassignIssuesFromColumn, arg.TargetColumn, arg.SourceColumn)
+func (q *Queries) ReassignAllIssuesFromColumn(ctx context.Context, arg ReassignAllIssuesFromColumnParams) error {
+	_, err := q.db.ExecContext(ctx, reassignAllIssuesFromColumn, arg.TargetColumn, arg.SourceColumn)
 	return err
 }
 
@@ -135,23 +135,30 @@ const updateIssue = `-- name: UpdateIssue :one
 UPDATE
     issues
 SET
-    name = $2,
-    description = $3,
+    name = COALESCE($1, name),
+    description = COALESCE($2, description),
+    column_id = COALESCE($3, column_id),
     updated_at = NOW()
 WHERE
-    id = $1
+    id = $4
 RETURNING
     id, name, description, created_at, updated_at, column_id
 `
 
 type UpdateIssueParams struct {
-	ID          int64       `db:"id" json:"id"`
 	Name        string      `db:"name" json:"name"`
 	Description null.String `db:"description" json:"description"`
+	ColumnID    int64       `db:"column_id" json:"column_id"`
+	ID          int64       `db:"id" json:"id"`
 }
 
 func (q *Queries) UpdateIssue(ctx context.Context, arg UpdateIssueParams) (Issue, error) {
-	row := q.db.QueryRowContext(ctx, updateIssue, arg.ID, arg.Name, arg.Description)
+	row := q.db.QueryRowContext(ctx, updateIssue,
+		arg.Name,
+		arg.Description,
+		arg.ColumnID,
+		arg.ID,
+	)
 	var i Issue
 	err := row.Scan(
 		&i.ID,
