@@ -510,3 +510,173 @@ func TestLoginUser(t *testing.T) {
 		assert.Len(t, jtis, 3, "All JTIs should be unique")
 	})
 }
+
+func TestGetAuthStatus(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	t.Run("should return auth status for authenticated user", func(t *testing.T) {
+		t.Parallel()
+		setup := testutils.WithIntegrationTestSetup(ctx, t)
+		defer setup.Cleanup()
+
+		// Register and login a user
+		registerReq := schemas.RegisterUserInput{
+			Email:    "authstatus@example.com",
+			Name:     "Auth Status User",
+			Password: "password123",
+		}
+		reqBody, _ := json.Marshal(registerReq)
+
+		registerURL := fmt.Sprintf("%s/users/register", setup.Server.GetURL())
+		registerResp, _ := http.Post(registerURL, "application/json", bytes.NewBuffer(reqBody))
+		registerResp.Body.Close()
+		require.Equal(t, http.StatusCreated, registerResp.StatusCode)
+
+		// Login to get cookies
+		loginReq := schemas.LoginUserInput{
+			Email:    "authstatus@example.com",
+			Password: "password123",
+		}
+		loginBody, _ := json.Marshal(loginReq)
+
+		loginURL := fmt.Sprintf("%s/users/login", setup.Server.GetURL())
+		loginResp, _ := http.Post(loginURL, "application/json", bytes.NewBuffer(loginBody))
+		defer loginResp.Body.Close()
+		require.Equal(t, http.StatusOK, loginResp.StatusCode)
+
+		// Extract cookies
+		cookies := loginResp.Cookies()
+
+		// Call /auth/me endpoint with cookies
+		authStatusURL := fmt.Sprintf("%s/users/auth/me", setup.Server.GetURL())
+		req, _ := http.NewRequest("GET", authStatusURL, nil)
+		for _, cookie := range cookies {
+			req.AddCookie(cookie)
+		}
+
+		client := &http.Client{}
+		authResp, err := client.Do(req)
+		require.NoError(t, err)
+		defer authResp.Body.Close()
+
+		// Assert response status
+		assert.Equal(t, http.StatusOK, authResp.StatusCode)
+
+		// Parse response
+		var authStatus schemas.AuthStatusResponse
+		err = json.NewDecoder(authResp.Body).Decode(&authStatus)
+		require.NoError(t, err)
+
+		// Assert response data
+		assert.True(t, authStatus.Authenticated)
+		assert.Equal(t, "authstatus@example.com", authStatus.User.Email)
+		assert.Equal(t, "Auth Status User", authStatus.User.Name)
+		assert.NotZero(t, authStatus.User.ID)
+		assert.NotZero(t, authStatus.User.CreatedAt)
+	})
+
+	t.Run("should return 401 for unauthenticated request", func(t *testing.T) {
+		t.Parallel()
+		setup := testutils.WithIntegrationTestSetup(ctx, t)
+		defer setup.Cleanup()
+
+		// Call /auth/me endpoint without cookies
+		authStatusURL := fmt.Sprintf("%s/users/auth/me", setup.Server.GetURL())
+		resp, err := http.Get(authStatusURL)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		// Assert response status
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+	})
+
+	t.Run("should return 401 for invalid access token", func(t *testing.T) {
+		t.Parallel()
+		setup := testutils.WithIntegrationTestSetup(ctx, t)
+		defer setup.Cleanup()
+
+		// Call /auth/me endpoint with invalid token
+		authStatusURL := fmt.Sprintf("%s/users/auth/me", setup.Server.GetURL())
+		req, _ := http.NewRequest("GET", authStatusURL, nil)
+		req.AddCookie(&http.Cookie{
+			Name:  "access-token",
+			Value: "invalid-token",
+		})
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		// Assert response status
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+	})
+
+	t.Run("should refresh access token using refresh token", func(t *testing.T) {
+		t.Parallel()
+		setup := testutils.WithIntegrationTestSetup(ctx, t)
+		defer setup.Cleanup()
+
+		// Register and login a user
+		registerReq := schemas.RegisterUserInput{
+			Email:    "refreshtest@example.com",
+			Name:     "Refresh Test User",
+			Password: "password123",
+		}
+		reqBody, _ := json.Marshal(registerReq)
+
+		registerURL := fmt.Sprintf("%s/users/register", setup.Server.GetURL())
+		registerResp, _ := http.Post(registerURL, "application/json", bytes.NewBuffer(reqBody))
+		registerResp.Body.Close()
+
+		// Login to get cookies
+		loginReq := schemas.LoginUserInput{
+			Email:    "refreshtest@example.com",
+			Password: "password123",
+		}
+		loginBody, _ := json.Marshal(loginReq)
+
+		loginURL := fmt.Sprintf("%s/users/login", setup.Server.GetURL())
+		loginResp, _ := http.Post(loginURL, "application/json", bytes.NewBuffer(loginBody))
+		defer loginResp.Body.Close()
+
+		// Extract only refresh token (simulate expired access token)
+		var refreshToken *http.Cookie
+		for _, cookie := range loginResp.Cookies() {
+			if cookie.Name == "refresh-token" {
+				refreshToken = cookie
+			}
+		}
+		require.NotNil(t, refreshToken)
+
+		// Call /auth/me with only refresh token (no access token)
+		authStatusURL := fmt.Sprintf("%s/users/auth/me", setup.Server.GetURL())
+		req, _ := http.NewRequest("GET", authStatusURL, nil)
+		req.AddCookie(refreshToken)
+
+		client := &http.Client{}
+		authResp, err := client.Do(req)
+		require.NoError(t, err)
+		defer authResp.Body.Close()
+
+		// Should succeed and return new access token
+		assert.Equal(t, http.StatusOK, authResp.StatusCode)
+
+		// Verify new access token cookie is set
+		var newAccessToken *http.Cookie
+		for _, cookie := range authResp.Cookies() {
+			if cookie.Name == "access-token" {
+				newAccessToken = cookie
+			}
+		}
+		assert.NotNil(t, newAccessToken, "New access token should be set")
+		assert.NotEmpty(t, newAccessToken.Value)
+
+		// Parse response and verify user data
+		var authStatus schemas.AuthStatusResponse
+		json.NewDecoder(authResp.Body).Decode(&authStatus)
+		assert.True(t, authStatus.Authenticated)
+		assert.Equal(t, "refreshtest@example.com", authStatus.User.Email)
+	})
+}

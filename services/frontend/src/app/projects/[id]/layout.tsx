@@ -1,6 +1,8 @@
 import { projectService } from '@/lib/services/project-service';
 import { AppSidebar } from '@/components/sidebar/sidebar';
 import { Input } from '@/components/ui/input';
+import { userService } from '@/lib/services/user-service';
+import { Heading1 } from 'lucide-react';
 
 interface ProjectLayoutProps {
   children: React.ReactNode;
@@ -12,11 +14,16 @@ export default async function ProjectLayout({
   params,
 }: ProjectLayoutProps) {
   const { id } = await params;
+  await userService.getAuthStatus();
 
   const [projectDetails, projects] = await Promise.all([
     projectService.getProjectDetails(id),
     projectService.getProjects(),
   ]);
+
+  if (!projects || !projectDetails) {
+    return <Heading1>Not implemented</Heading1>;
+  }
 
   return (
     <div className="flex h-full overflow-y-hidden">

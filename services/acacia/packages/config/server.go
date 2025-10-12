@@ -56,7 +56,7 @@ func NewServer(d *Database, l *logrus.Logger, env *Environment) *Server {
 	r.Mount("/issues", routes.IssuesRoutes(issuesController, authMiddlewares, authzMiddleware))
 	r.Mount("/projects", routes.ProjectsRoutes(projectsController, authMiddlewares, authzMiddleware))
 	r.Mount("/project-columns", routes.ProjectStatusColumnsRoutes(projectColumnsController, authMiddlewares, authzMiddleware))
-	r.Mount("/users", routes.UsersRoutes(usersController, chi.Middlewares{}))
+	r.Mount("/users", routes.UsersRoutes(usersController, authMiddlewares))
 
 	httpServer := &http.Server{
 		Handler: r,

@@ -180,3 +180,36 @@ func (c *UsersController) Login(w http.ResponseWriter, r *http.Request) error {
 	json.NewEncoder(w).Encode(response)
 	return nil
 }
+
+func (c *UsersController) GetAuthStatus(w http.ResponseWriter, r *http.Request) error {
+	// Get user ID from context (set by auth middleware)
+	userID, ok := auth.GetUserID(r)
+	if !ok {
+		return httperr.WithStatus(errors.New("Unauthorized"), http.StatusUnauthorized)
+	}
+
+	// Get user details from database
+	user, err := c.queries.GetUserByID(r.Context(), userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return httperr.WithStatus(errors.New("User not found"), http.StatusUnauthorized)
+		}
+		c.logger.WithError(err).Error("Failed to get user by ID")
+		return httperr.WithStatus(errors.New("Internal server error"), http.StatusInternalServerError)
+	}
+
+	// Return auth status with user info
+	response := schemas.AuthStatusResponse{
+		Authenticated: true,
+		User: schemas.UserResponse{
+			ID:        user.ID,
+			Email:     user.Email,
+			Name:      user.Name,
+			CreatedAt: user.CreatedAt,
+		},
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+	return nil
+}

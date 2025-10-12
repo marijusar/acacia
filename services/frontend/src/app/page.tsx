@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 export default async function HomePage() {
   const projects = await projectService.getProjects();
 
-  if (projects.length > 0) {
+  if (projects && projects.length > 0) {
     redirect(`/projects/${projects[0].id}/board`);
   }
 

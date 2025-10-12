@@ -10,13 +10,6 @@ type CreateIssueParams = {
   description?: string;
 };
 
-type UpdateIssueParms = {
-  id: number;
-  column_id?: number;
-  title?: string;
-  description?: string;
-};
-
 type IssuesServiceArguments = {} & BaseServiceArguments;
 
 class IssuesService extends BaseHttpService {
@@ -25,8 +18,13 @@ class IssuesService extends BaseHttpService {
   }
 
   getProjectIssues = cache(async (projectId: string) => {
+    const authCookies = await this.cookieService.getAuthCookies();
+
     const response = await fetch(`${this.url}/issues/project/${projectId}`, {
       method: 'GET',
+      headers: {
+        Cookie: authCookies,
+      },
     });
 
     if (!response.ok) {
@@ -43,10 +41,13 @@ class IssuesService extends BaseHttpService {
   });
 
   async createIssue(params: CreateIssueParams) {
+    const authCookies = await this.cookieService.getAuthCookies();
+
     const response = await fetch(`${this.url}/issues`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Cookie: authCookies,
       },
       body: JSON.stringify(params),
     });
@@ -64,10 +65,13 @@ class IssuesService extends BaseHttpService {
   }
 
   async updateIssue(issue: Issue) {
+    const authCookies = await this.cookieService.getAuthCookies();
+
     const response = await fetch(`${this.url}/issues`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        Cookie: authCookies,
       },
       body: JSON.stringify(issue),
     });

@@ -12,8 +12,6 @@ export const TicketCard = ({
   name,
   description,
   column_id,
-  created_at,
-  updated_at,
   ...rest
 }: TicketCardProps) => {
   const [dragging, setDragging] = useState(false);
@@ -27,8 +25,6 @@ export const TicketCard = ({
           name,
           description,
           column_id,
-          created_at,
-          updated_at,
         })
       )
     );

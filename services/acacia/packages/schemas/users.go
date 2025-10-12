@@ -23,3 +23,8 @@ type LoginUserInput struct {
 type LoginResponse struct {
 	User UserResponse `json:"user"`
 }
+
+type AuthStatusResponse struct {
+	Authenticated bool         `json:"authenticated"`
+	User          UserResponse `json:"user"`
+}

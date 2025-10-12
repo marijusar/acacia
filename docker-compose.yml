@@ -1,4 +1,29 @@
 services:
+  traefik:
+    image: traefik:v3.5
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.filename=/etc/traefik/dynamic.yml"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http.tls=true"
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.entrypoint=metrics"
+      - "--entrypoints.metrics.address=:8082"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8082:8082"  # Prometheus metrics
+      - "8081:8080"  # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik:/etc/traefik
+    networks:
+      - dashboard-network
+    restart: unless-stopped
+
   acacia:
     build:
       context: .
@@ -30,8 +55,8 @@ services:
     build:
       context: .
       dockerfile: docker/frontend.Dockerfile
-    ports:
-      - '3000:3000'
+    expose:
+      - '3000'
     volumes:
       - ./services/frontend:/app
     env_file : "./services/frontend/.env"
@@ -40,6 +65,12 @@ services:
     restart: unless-stopped
     networks:
       - dashboard-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`localhost`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls=true"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
   postgres:
     image: postgres:17-alpine
     environment:

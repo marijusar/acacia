@@ -1,6 +1,6 @@
 import { cache } from 'react';
 import { env } from '@/lib/config/env';
-import { logger, type BaseLogger } from '@/lib/config/logger';
+import { logger } from '@/lib/config/logger';
 import {
   projectDetailsResponse,
   projectsResponse,
@@ -8,6 +8,7 @@ import {
   createProjectResponse,
   Issue,
 } from '@/lib/schemas/projects';
+import { BaseHttpService, BaseServiceArguments } from './base-service';
 
 type CreateProjectParams = {
   name: string;
@@ -18,18 +19,21 @@ type CreateProjectColumnParams = {
   project_id: number;
 };
 
-class ProjectService {
-  private url;
-  private logger;
+type ProjectServiceArguments = BaseServiceArguments & {};
 
-  constructor(url: string, logger: BaseLogger) {
-    this.url = url;
-    this.logger = logger;
+class ProjectService extends BaseHttpService {
+  constructor(args: ProjectServiceArguments) {
+    super(args);
   }
 
   getProjectDetails = cache(async (id: string) => {
+    const authCookies = await this.cookieService.getAuthCookies();
+
     const response = await fetch(`${this.url}/projects/${id}/details`, {
       method: 'GET',
+      headers: {
+        Cookie: authCookies,
+      },
     });
 
     if (!response.ok) {
@@ -38,7 +42,7 @@ class ProjectService {
         '[GET_PROJECT_DETAILS] Could not get project details',
         body
       );
-      throw new Error('Could not get project details.');
+      return undefined;
     }
 
     const unsafeBody = await response.json();
@@ -66,14 +70,19 @@ class ProjectService {
   });
 
   getProjects = cache(async () => {
+    const authCookies = await this.cookieService.getAuthCookies();
+
     const response = await fetch(`${this.url}/projects/`, {
       method: 'GET',
+      headers: {
+        Cookie: authCookies,
+      },
     });
 
     if (!response.ok) {
       const body = await response.json();
       this.logger.error('[GET_PROJECTS] Could not get projects.', body);
-      throw new Error('Could not get projects');
+      return undefined;
     }
 
     const unsafeBody = await response.json();
@@ -84,8 +93,15 @@ class ProjectService {
   });
 
   getProjectColumns = cache(async (projectId: string) => {
+    const authCookies = await this.cookieService.getAuthCookies();
+
     const response = await fetch(
-      `${this.url}/project-columns/project/${projectId}`
+      `${this.url}/project-columns/project/${projectId}`,
+      {
+        headers: {
+          Cookie: authCookies,
+        },
+      }
     );
 
     if (!response.ok) {
@@ -101,10 +117,13 @@ class ProjectService {
 
   // Mutation methods (not cached)
   async createProject(params: CreateProjectParams) {
+    const authCookies = await this.cookieService.getAuthCookies();
+
     const response = await fetch(`${this.url}/projects`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Cookie: authCookies,
       },
       body: JSON.stringify(params),
     });
@@ -121,10 +140,13 @@ class ProjectService {
   }
 
   async createProjectColumn(params: CreateProjectColumnParams) {
+    const authCookies = await this.cookieService.getAuthCookies();
+
     const response = await fetch(`${this.url}/project-columns/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Cookie: authCookies,
       },
       body: JSON.stringify(params),
     });
@@ -140,8 +162,13 @@ class ProjectService {
   }
 
   async deleteProjectColumn(id: number) {
+    const authCookies = await this.cookieService.getAuthCookies();
+
     const response = await fetch(`${this.url}/project-columns/${id}`, {
       method: 'DELETE',
+      headers: {
+        Cookie: authCookies,
+      },
     });
 
     if (!response.ok) {
@@ -155,4 +182,7 @@ class ProjectService {
   }
 }
 
-export const projectService = new ProjectService(env.ACACIA_API_URL, logger);
+export const projectService = new ProjectService({
+  url: env.ACACIA_API_URL,
+  logger,
+});

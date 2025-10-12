@@ -13,6 +13,10 @@ export default async function BoardPage({ params }: BoardPageProps) {
 
   const projectDetails = await projectService.getProjectDetails(id);
 
+  if (!projectDetails) {
+    return <Heading1> Not implemented </Heading1>;
+  }
+
   return (
     <>
       <div className="flex items-center justify-between mb-8 sticky left-0">
