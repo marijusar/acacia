@@ -10,20 +10,26 @@ import (
 )
 
 const createProject = `-- name: CreateProject :one
-INSERT INTO projects (name, created_at, updated_at)
-    VALUES ($1, NOW(), NOW())
+INSERT INTO projects (name, team_id, created_at, updated_at)
+    VALUES ($1, $2, NOW(), NOW())
 RETURNING
-    id, name, created_at, updated_at
+    id, name, created_at, updated_at, team_id
 `
 
-func (q *Queries) CreateProject(ctx context.Context, name string) (Project, error) {
-	row := q.db.QueryRowContext(ctx, createProject, name)
+type CreateProjectParams struct {
+	Name   string `db:"name" json:"name"`
+	TeamID int64  `db:"team_id" json:"team_id"`
+}
+
+func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (Project, error) {
+	row := q.db.QueryRowContext(ctx, createProject, arg.Name, arg.TeamID)
 	var i Project
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TeamID,
 	)
 	return i, err
 }
@@ -32,7 +38,7 @@ const deleteProject = `-- name: DeleteProject :one
 DELETE FROM projects
 WHERE id = $1
 RETURNING
-    id, name, created_at, updated_at
+    id, name, created_at, updated_at, team_id
 `
 
 func (q *Queries) DeleteProject(ctx context.Context, id int64) (Project, error) {
@@ -43,13 +49,14 @@ func (q *Queries) DeleteProject(ctx context.Context, id int64) (Project, error) 
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TeamID,
 	)
 	return i, err
 }
 
 const getProjectByID = `-- name: GetProjectByID :one
 SELECT
-    id, name, created_at, updated_at
+    id, name, created_at, updated_at, team_id
 FROM
     projects
 WHERE
@@ -64,6 +71,7 @@ func (q *Queries) GetProjectByID(ctx context.Context, id int64) (Project, error)
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TeamID,
 	)
 	return i, err
 }
@@ -110,7 +118,7 @@ func (q *Queries) GetProjectIssues(ctx context.Context, projectID int32) ([]Issu
 
 const getProjects = `-- name: GetProjects :many
 SELECT
-    id, name, created_at, updated_at
+    id, name, created_at, updated_at, team_id
 FROM
     projects
 `
@@ -129,6 +137,7 @@ func (q *Queries) GetProjects(ctx context.Context) ([]Project, error) {
 			&i.Name,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.TeamID,
 		); err != nil {
 			return nil, err
 		}
@@ -152,7 +161,7 @@ SET
 WHERE
     id = $1
 RETURNING
-    id, name, created_at, updated_at
+    id, name, created_at, updated_at, team_id
 `
 
 type UpdateProjectParams struct {
@@ -168,6 +177,7 @@ func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) (P
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TeamID,
 	)
 	return i, err
 }

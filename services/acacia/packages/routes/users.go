@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func UsersRoutes(controller *api.UsersController) chi.Router {
+func UsersRoutes(controller *api.UsersController, middlewares chi.Middlewares) chi.Router {
 	r := chi.NewRouter()
 
 	r.Post("/register", httperr.WithCustomErrorHandler(controller.Register))

@@ -60,7 +60,12 @@ func (c *ProjectsController) CreateProject(w http.ResponseWriter, r *http.Reques
 		return httperr.WithStatus(errors.New("Validation failed: "+err.Error()), http.StatusBadRequest)
 	}
 
-	project, err := c.queries.CreateProject(r.Context(), req.Name)
+	params := db.CreateProjectParams{
+		Name:   req.Name,
+		TeamID: req.TeamID,
+	}
+
+	project, err := c.queries.CreateProject(r.Context(), params)
 	if err != nil {
 		c.logger.WithError(err).Error("Failed to create project")
 		return httperr.WithStatus(errors.New("Internal server error"), http.StatusInternalServerError)

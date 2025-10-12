@@ -84,7 +84,7 @@ func (m *JWTManager) GenerateRefreshToken(userID int64, jti string) (string, tim
 
 // ValidateToken validates a token and returns its claims
 func (m *JWTManager) ValidateToken(tokenString string) (*TokenClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &TokenClaims{}, func(token *jwt.Token) (any, error) {
 		// Verify signing method is exactly HS256
 		if token.Method != jwt.SigningMethodHS256 {
 			return nil, ErrInvalidSignature

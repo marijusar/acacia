@@ -3,14 +3,19 @@ package testutils
 import (
 	"acacia/packages/config"
 	"acacia/packages/db"
+	"acacia/packages/schemas"
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/guregu/null"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
@@ -210,4 +215,82 @@ func WithIntegrationTestSetup(ctx context.Context, t *testing.T) *IntegrationTes
 		Queries: queries,
 		Cleanup: cleanup,
 	}
+}
+
+// authenticatedTransport wraps http.RoundTripper to add cookies to each request
+type authenticatedTransport struct {
+	cookies []*http.Cookie
+	base    http.RoundTripper
+}
+
+func (t *authenticatedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	// Add cookies to the request
+	for _, cookie := range t.cookies {
+		req.AddCookie(cookie)
+	}
+	return t.base.RoundTrip(req)
+}
+
+// CreateAuthenticatedClient registers and logs in a test user, returning an HTTP client that automatically
+// includes authentication cookies in all requests
+func CreateAuthenticatedClient(t *testing.T, setup *IntegrationTestSetup, email, name, password string) *http.Client {
+	// Register the user
+	registerReq := schemas.RegisterUserInput{
+		Email:    email,
+		Name:     name,
+		Password: password,
+	}
+	reqBody, err := json.Marshal(registerReq)
+	require.NoError(t, err)
+
+	registerURL := fmt.Sprintf("%s/users/register", setup.Server.GetURL())
+	registerResp, err := http.Post(registerURL, "application/json", bytes.NewBuffer(reqBody))
+	require.NoError(t, err)
+	defer registerResp.Body.Close()
+	require.Equal(t, http.StatusCreated, registerResp.StatusCode)
+
+	// Login to get authentication cookies
+	loginReq := schemas.LoginUserInput{
+		Email:    email,
+		Password: password,
+	}
+	loginBody, err := json.Marshal(loginReq)
+	require.NoError(t, err)
+
+	loginURL := fmt.Sprintf("%s/users/login", setup.Server.GetURL())
+	loginResp, err := http.Post(loginURL, "application/json", bytes.NewBuffer(loginBody))
+	require.NoError(t, err)
+	defer loginResp.Body.Close()
+	require.Equal(t, http.StatusOK, loginResp.StatusCode)
+
+	// Extract cookies from response
+	cookies := loginResp.Cookies()
+
+	// Create client with custom transport that adds cookies to every request
+	return &http.Client{
+		Transport: &authenticatedTransport{
+			cookies: cookies,
+			base:    http.DefaultTransport,
+		},
+	}
+}
+
+// CreateTeamAndAddUser creates a team and adds the specified user to it
+// Returns the team ID
+func CreateTeamAndAddUser(t *testing.T, ctx context.Context, setup *IntegrationTestSetup, userID int64, teamName string) int64 {
+	// Create team
+	team, err := setup.Queries.CreateTeam(ctx, db.CreateTeamParams{
+		Name:        teamName,
+		Description: null.StringFrom("Test team"),
+	})
+	require.NoError(t, err)
+
+	// Add user to team
+	_, err = setup.Queries.AddTeamMember(ctx, db.AddTeamMemberParams{
+		TeamID: team.ID,
+		UserID: userID,
+	})
+	require.NoError(t, err)
+
+	return team.ID
 }

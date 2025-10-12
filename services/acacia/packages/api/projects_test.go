@@ -26,17 +26,25 @@ func TestCreateProject(t *testing.T) {
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
 
+		// Create authenticated client
+		client := testutils.CreateAuthenticatedClient(t, setup, "test@example.com", "Test User", "password123")
+
+		// Get user and create team
+		user, err := setup.Queries.GetUserByEmail(ctx, "test@example.com")
+		require.NoError(t, err)
+		teamID := testutils.CreateTeamAndAddUser(t, ctx, setup, user.ID, "Test Team")
+
 		// Prepare request body
 		createReq := schemas.CreateProjectInput{
-			Name: "Test Project",
+			Name:   "Test Project",
+			TeamID: teamID,
 		}
 		reqBody, err := json.Marshal(createReq)
 		require.NoError(t, err)
 
-		// Make HTTP request to the server
-
+		// Make authenticated HTTP request to the server
 		url := fmt.Sprintf("%s%s", setup.Server.GetURL(), "/projects")
-		resp, err := http.Post(url, "application/json", bytes.NewBuffer(reqBody))
+		resp, err := client.Post(url, "application/json", bytes.NewBuffer(reqBody))
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -51,6 +59,7 @@ func TestCreateProject(t *testing.T) {
 		// Assert response body
 		assert.NotZero(t, project.ID)
 		assert.Equal(t, "Test Project", project.Name)
+		assert.Equal(t, teamID, project.TeamID)
 		assert.NotZero(t, project.CreatedAt)
 		assert.NotZero(t, project.UpdatedAt)
 	})
@@ -60,9 +69,12 @@ func TestCreateProject(t *testing.T) {
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
 
+		// Create authenticated client
+		client := testutils.CreateAuthenticatedClient(t, setup, "test2@example.com", "Test User", "password123")
+
 		// Make HTTP request with invalid JSON
 		url := fmt.Sprintf("%s%s", setup.Server.GetURL(), "/projects")
-		resp, err := http.Post(url, "application/json", bytes.NewBufferString("{invalid json"))
+		resp, err := client.Post(url, "application/json", bytes.NewBufferString("{invalid json"))
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -75,16 +87,25 @@ func TestCreateProject(t *testing.T) {
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
 
+		// Create authenticated client
+		client := testutils.CreateAuthenticatedClient(t, setup, "test3@example.com", "Test User", "password123")
+
+		// Get user and create team
+		user, err := setup.Queries.GetUserByEmail(ctx, "test3@example.com")
+		require.NoError(t, err)
+		teamID := testutils.CreateTeamAndAddUser(t, ctx, setup, user.ID, "Test Team")
+
 		// Prepare request body with empty name
 		createReq := schemas.CreateProjectInput{
-			Name: "",
+			Name:   "",
+			TeamID: teamID,
 		}
 		reqBody, err := json.Marshal(createReq)
 		require.NoError(t, err)
 
 		// Make HTTP request
 		url := fmt.Sprintf("%s%s", setup.Server.GetURL(), "/projects")
-		resp, err := http.Post(url, "application/json", bytes.NewBuffer(reqBody))
+		resp, err := client.Post(url, "application/json", bytes.NewBuffer(reqBody))
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -97,16 +118,25 @@ func TestCreateProject(t *testing.T) {
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
 
+		// Create authenticated client
+		client := testutils.CreateAuthenticatedClient(t, setup, "test4@example.com", "Test User", "password123")
+
+		// Get user and create team
+		user, err := setup.Queries.GetUserByEmail(ctx, "test4@example.com")
+		require.NoError(t, err)
+		teamID := testutils.CreateTeamAndAddUser(t, ctx, setup, user.ID, "Test Team")
+
 		// Prepare request body with name that exceeds max length (256 characters)
 		longName := strings.Repeat("a", 256)
 		createReq := schemas.CreateProjectInput{
-			Name: longName,
+			Name:   longName,
+			TeamID: teamID,
 		}
 		reqBody, err := json.Marshal(createReq)
 		require.NoError(t, err)
 
 		// Make HTTP request
-		resp, err := http.Post(setup.Server.GetURL()+"/projects", "application/json", bytes.NewBuffer(reqBody))
+		resp, err := client.Post(setup.Server.GetURL()+"/projects", "application/json", bytes.NewBuffer(reqBody))
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -124,16 +154,25 @@ func TestGetProjectByID(t *testing.T) {
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
 
+		// Create authenticated client
+		client := testutils.CreateAuthenticatedClient(t, setup, "test5@example.com", "Test User", "password123")
+
+		// Get user and create team
+		user, err := setup.Queries.GetUserByEmail(ctx, "test5@example.com")
+		require.NoError(t, err)
+		teamID := testutils.CreateTeamAndAddUser(t, ctx, setup, user.ID, "Test Team")
+
 		// First create a project to retrieve
 		createReq := schemas.CreateProjectInput{
-			Name: "Test Project for Get",
+			Name:   "Test Project for Get",
+			TeamID: teamID,
 		}
 		reqBody, err := json.Marshal(createReq)
 		require.NoError(t, err)
 
 		// Create project
 		createURL := fmt.Sprintf("%s%s", setup.Server.GetURL(), "/projects")
-		createResp, err := http.Post(createURL, "application/json", bytes.NewBuffer(reqBody))
+		createResp, err := client.Post(createURL, "application/json", bytes.NewBuffer(reqBody))
 		require.NoError(t, err)
 		defer createResp.Body.Close()
 
@@ -143,7 +182,7 @@ func TestGetProjectByID(t *testing.T) {
 
 		// Now get the project by ID
 		getURL := fmt.Sprintf("%s/projects/%d", setup.Server.GetURL(), createdProject.ID)
-		getResp, err := http.Get(getURL)
+		getResp, err := client.Get(getURL)
 		require.NoError(t, err)
 		defer getResp.Body.Close()
 
@@ -167,9 +206,12 @@ func TestGetProjectByID(t *testing.T) {
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
 
+		// Create authenticated client
+		client := testutils.CreateAuthenticatedClient(t, setup, "test6@example.com", "Test User", "password123")
+
 		// Try to get non-existent project
 		getURL := fmt.Sprintf("%s/projects/999999", setup.Server.GetURL())
-		getResp, err := http.Get(getURL)
+		getResp, err := client.Get(getURL)
 		require.NoError(t, err)
 		defer getResp.Body.Close()
 
@@ -182,9 +224,12 @@ func TestGetProjectByID(t *testing.T) {
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
 
+		// Create authenticated client
+		client := testutils.CreateAuthenticatedClient(t, setup, "test7@example.com", "Test User", "password123")
+
 		// Try to get project with invalid ID
 		getURL := fmt.Sprintf("%s/projects/invalid", setup.Server.GetURL())
-		getResp, err := http.Get(getURL)
+		getResp, err := client.Get(getURL)
 		require.NoError(t, err)
 		defer getResp.Body.Close()
 
@@ -202,20 +247,29 @@ func TestGetProjects(t *testing.T) {
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
 
+		// Create authenticated client
+		client := testutils.CreateAuthenticatedClient(t, setup, "test8@example.com", "Test User", "password123")
+
+		// Get user and create team
+		user, err := setup.Queries.GetUserByEmail(ctx, "test8@example.com")
+		require.NoError(t, err)
+		teamID := testutils.CreateTeamAndAddUser(t, ctx, setup, user.ID, "Test Team")
+
 		// Create some test projects
 		projects := []string{"Project 1", "Project 2", "Project 3"}
 		createdProjects := make([]db.Project, 0, len(projects))
 
 		for _, projectName := range projects {
 			createReq := schemas.CreateProjectInput{
-				Name: projectName,
+				Name:   projectName,
+				TeamID: teamID,
 			}
 			reqBody, err := json.Marshal(createReq)
 			require.NoError(t, err)
 
 			// Create project
 			createURL := fmt.Sprintf("%s%s", setup.Server.GetURL(), "/projects")
-			createResp, err := http.Post(createURL, "application/json", bytes.NewBuffer(reqBody))
+			createResp, err := client.Post(createURL, "application/json", bytes.NewBuffer(reqBody))
 			require.NoError(t, err)
 			defer createResp.Body.Close()
 
@@ -227,7 +281,7 @@ func TestGetProjects(t *testing.T) {
 
 		// Now get all projects
 		getURL := fmt.Sprintf("%s/projects", setup.Server.GetURL())
-		getResp, err := http.Get(getURL)
+		getResp, err := client.Get(getURL)
 		require.NoError(t, err)
 		defer getResp.Body.Close()
 
@@ -263,9 +317,12 @@ func TestGetProjects(t *testing.T) {
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
 
+		// Create authenticated client
+		client := testutils.CreateAuthenticatedClient(t, setup, "test9@example.com", "Test User", "password123")
+
 		// Get all projects (should be empty)
 		getURL := fmt.Sprintf("%s/projects", setup.Server.GetURL())
-		getResp, err := http.Get(getURL)
+		getResp, err := client.Get(getURL)
 		require.NoError(t, err)
 		defer getResp.Body.Close()
 
@@ -279,5 +336,147 @@ func TestGetProjects(t *testing.T) {
 
 		// Assert response body is empty array
 		assert.Len(t, retrievedProjects, 0)
+	})
+
+	t.Run("should return 403 when trying to create project for team user is not member of", func(t *testing.T) {
+		t.Parallel()
+		setup := testutils.WithIntegrationTestSetup(ctx, t)
+		defer setup.Cleanup()
+
+		// Create first user and their team
+		_ = testutils.CreateAuthenticatedClient(t, setup, "user1@example.com", "User 1", "password123")
+		user1, err := setup.Queries.GetUserByEmail(ctx, "user1@example.com")
+		require.NoError(t, err)
+		team1ID := testutils.CreateTeamAndAddUser(t, ctx, setup, user1.ID, "Team 1")
+
+		// Create second user (not part of team1)
+		client2 := testutils.CreateAuthenticatedClient(t, setup, "user2@example.com", "User 2", "password123")
+
+		// User 2 tries to create a project for Team 1 (should fail)
+		createReq := schemas.CreateProjectInput{
+			Name:   "Unauthorized Project",
+			TeamID: team1ID,
+		}
+		reqBody, err := json.Marshal(createReq)
+		require.NoError(t, err)
+
+		url := fmt.Sprintf("%s/projects", setup.Server.GetURL())
+		resp, err := client2.Post(url, "application/json", bytes.NewBuffer(reqBody))
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		// Assert response status is 403 Forbidden
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("should return 403 when trying to get project from team user is not member of", func(t *testing.T) {
+		t.Parallel()
+		setup := testutils.WithIntegrationTestSetup(ctx, t)
+		defer setup.Cleanup()
+
+		// Create first user and their team with a project
+		_ = testutils.CreateAuthenticatedClient(t, setup, "user1@example.com", "User 1", "password123")
+		user1, err := setup.Queries.GetUserByEmail(ctx, "user1@example.com")
+		require.NoError(t, err)
+		team1ID := testutils.CreateTeamAndAddUser(t, ctx, setup, user1.ID, "Team 1")
+
+		// Create a project for team 1
+		project, err := setup.Queries.CreateProject(ctx, db.CreateProjectParams{
+			Name:   "Team 1 Project",
+			TeamID: team1ID,
+		})
+		require.NoError(t, err)
+
+		// Create second user (not part of team1)
+		client2 := testutils.CreateAuthenticatedClient(t, setup, "user2@example.com", "User 2", "password123")
+
+		// User 2 tries to get Team 1's project (should fail)
+		getURL := fmt.Sprintf("%s/projects/%d", setup.Server.GetURL(), project.ID)
+		getResp, err := client2.Get(getURL)
+		require.NoError(t, err)
+		defer getResp.Body.Close()
+
+		// Assert response status is 403 Forbidden
+		assert.Equal(t, http.StatusForbidden, getResp.StatusCode)
+	})
+
+	t.Run("should return 403 when trying to update project from team user is not member of", func(t *testing.T) {
+		t.Parallel()
+		setup := testutils.WithIntegrationTestSetup(ctx, t)
+		defer setup.Cleanup()
+
+		// Create first user and their team with a project
+		_ = testutils.CreateAuthenticatedClient(t, setup, "user1@example.com", "User 1", "password123")
+		user1, err := setup.Queries.GetUserByEmail(ctx, "user1@example.com")
+		require.NoError(t, err)
+		team1ID := testutils.CreateTeamAndAddUser(t, ctx, setup, user1.ID, "Team 1")
+
+		// Create a project for team 1
+		project, err := setup.Queries.CreateProject(ctx, db.CreateProjectParams{
+			Name:   "Team 1 Project",
+			TeamID: team1ID,
+		})
+		require.NoError(t, err)
+
+		// Create second user (not part of team1)
+		client2 := testutils.CreateAuthenticatedClient(t, setup, "user2@example.com", "User 2", "password123")
+
+		// User 2 tries to update Team 1's project (should fail)
+		updateReq := schemas.UpdateProjectInput{
+			Name: "Hacked Project Name",
+		}
+		reqBody, err := json.Marshal(updateReq)
+		require.NoError(t, err)
+
+		updateURL := fmt.Sprintf("%s/projects/%d", setup.Server.GetURL(), project.ID)
+		req, err := http.NewRequest("PUT", updateURL, bytes.NewBuffer(reqBody))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := client2.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		// Assert response status is 403 Forbidden
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("should return 403 when trying to delete project from team user is not member of", func(t *testing.T) {
+		t.Parallel()
+		setup := testutils.WithIntegrationTestSetup(ctx, t)
+		defer setup.Cleanup()
+
+		// Create first user and their team with a project
+		_ = testutils.CreateAuthenticatedClient(t, setup, "user1@example.com", "User 1", "password123")
+		user1, err := setup.Queries.GetUserByEmail(ctx, "user1@example.com")
+		require.NoError(t, err)
+		team1ID := testutils.CreateTeamAndAddUser(t, ctx, setup, user1.ID, "Team 1")
+
+		// Create a project for team 1
+		project, err := setup.Queries.CreateProject(ctx, db.CreateProjectParams{
+			Name:   "Team 1 Project",
+			TeamID: team1ID,
+		})
+		require.NoError(t, err)
+
+		// Create second user (not part of team1)
+		client2 := testutils.CreateAuthenticatedClient(t, setup, "user2@example.com", "User 2", "password123")
+
+		// User 2 tries to delete Team 1's project (should fail)
+		deleteURL := fmt.Sprintf("%s/projects/%d", setup.Server.GetURL(), project.ID)
+		req, err := http.NewRequest("DELETE", deleteURL, nil)
+		require.NoError(t, err)
+
+		resp, err := client2.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		// Assert response status is 403 Forbidden
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+
+		// Verify project still exists
+		existingProject, err := setup.Queries.GetProjectByID(ctx, project.ID)
+		require.NoError(t, err)
+		assert.Equal(t, project.ID, existingProject.ID)
 	})
 }

@@ -32,9 +32,15 @@ func NewServer(d *Database, l *logrus.Logger, env *Environment) *Server {
 	// Initialize JWT manager
 	jwtManager := auth.NewJWTManager(
 		env.JWTSecret,
-		15*time.Minute, // Access token: 15 minutes
+		15*time.Minute,  // Access token: 15 minutes
 		30*24*time.Hour, // Refresh token: 30 days
 	)
+
+	// Initialize authentication middleware
+	authMiddleware := auth.NewAuthMiddleware(jwtManager, d.Queries, l)
+
+	// Initialize authorization middleware (single instance)
+	authzMiddleware := auth.NewAuthorizationMiddleware(d.Queries, l)
 
 	issuesController := api.NewIssuesController(d.Queries, l)
 	projectsController := api.NewProjectsController(d.Queries, l)
@@ -45,10 +51,12 @@ func NewServer(d *Database, l *logrus.Logger, env *Environment) *Server {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	r.Mount("/issues", routes.IssuesRoutes(issuesController))
-	r.Mount("/projects", routes.ProjectsRoutes(projectsController))
-	r.Mount("/project-columns", routes.ProjectStatusColumnsRoutes(projectColumnsController))
-	r.Mount("/users", routes.UsersRoutes(usersController))
+	authMiddlewares := chi.Middlewares{authMiddleware.Handle}
+
+	r.Mount("/issues", routes.IssuesRoutes(issuesController, authMiddlewares, authzMiddleware))
+	r.Mount("/projects", routes.ProjectsRoutes(projectsController, authMiddlewares, authzMiddleware))
+	r.Mount("/project-columns", routes.ProjectStatusColumnsRoutes(projectColumnsController, authMiddlewares, authzMiddleware))
+	r.Mount("/users", routes.UsersRoutes(usersController, chi.Middlewares{}))
 
 	httpServer := &http.Server{
 		Handler: r,

@@ -13,8 +13,8 @@ WHERE
     id = $1;
 
 -- name: CreateProject :one
-INSERT INTO projects (name, created_at, updated_at)
-    VALUES ($1, NOW(), NOW())
+INSERT INTO projects (name, team_id, created_at, updated_at)
+    VALUES ($1, $2, NOW(), NOW())
 RETURNING
     *;
 
