@@ -91,10 +91,15 @@ func TestExampleUsage(t *testing.T) {
 		// Your test logic here
 		// testDB.DB contains a connection to a fresh database with all migrations applied
 
+		_, err = testDB.DB.ExecContext(ctx,
+			"INSERT INTO teams (name, created_at, updated_at) VALUES ($1, NOW(), NOW())",
+			"Test team")
+
 		// For example, insert some test data
 		_, err = testDB.DB.ExecContext(ctx,
-			"INSERT INTO projects (name, created_at, updated_at) VALUES ($1, NOW(), NOW())",
-			"Test Project")
+			"INSERT INTO projects (name, team_id, created_at, updated_at) VALUES ($1, $2, NOW(), NOW())",
+			"Test Project", 1)
+
 		if err != nil {
 			t.Fatalf("Failed to insert test data: %v", err)
 		}
@@ -134,4 +139,3 @@ func TestExampleUsage(t *testing.T) {
 		}
 	})
 }
-

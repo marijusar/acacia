@@ -37,7 +37,12 @@ func TestRegisterUser(t *testing.T) {
 
 		// Make HTTP request to the server
 		url := fmt.Sprintf("%s/users/register", setup.Server.GetURL())
-		resp, _ := http.Post(url, "application/json", bytes.NewBuffer(reqBody))
+		resp, err := http.Post(url, "application/json", bytes.NewBuffer(reqBody))
+
+		if err != nil {
+			t.Fatal("Could not make post request.")
+		}
+
 		defer resp.Body.Close()
 
 		// Assert response status
@@ -59,7 +64,7 @@ func TestRegisterUser(t *testing.T) {
 			Scan(&user.ID, &user.Email, &user.Name, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt)
 
 		// Verify password hash
-		err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte("password123"))
+		err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte("password123"))
 		assert.NoError(t, err, "Password should be properly hashed")
 	})
 
@@ -67,7 +72,6 @@ func TestRegisterUser(t *testing.T) {
 		t.Parallel()
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
-
 
 		// Make HTTP request with invalid JSON
 		url := fmt.Sprintf("%s/users/register", setup.Server.GetURL())
@@ -82,7 +86,6 @@ func TestRegisterUser(t *testing.T) {
 		t.Parallel()
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
-
 
 		// Prepare request with invalid email
 		registerReq := schemas.RegisterUserInput{
@@ -109,7 +112,6 @@ func TestRegisterUser(t *testing.T) {
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
 
-
 		// Prepare request without email
 		registerReq := schemas.RegisterUserInput{
 			Email:    "",
@@ -129,7 +131,6 @@ func TestRegisterUser(t *testing.T) {
 		t.Parallel()
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
-
 
 		// Prepare request with empty name
 		registerReq := schemas.RegisterUserInput{
@@ -151,7 +152,6 @@ func TestRegisterUser(t *testing.T) {
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
 
-
 		// Prepare request with name exceeding 100 characters
 		longName := strings.Repeat("a", 101)
 		registerReq := schemas.RegisterUserInput{
@@ -172,7 +172,6 @@ func TestRegisterUser(t *testing.T) {
 		t.Parallel()
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
-
 
 		// Prepare request with password less than 6 characters
 		registerReq := schemas.RegisterUserInput{
@@ -198,7 +197,6 @@ func TestRegisterUser(t *testing.T) {
 		t.Parallel()
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
-
 
 		// Prepare request with password exceeding 50 characters
 		longPassword := strings.Repeat("a", 51)
@@ -226,7 +224,6 @@ func TestRegisterUser(t *testing.T) {
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
 
-
 		// Register first user
 		registerReq := schemas.RegisterUserInput{
 			Email:    "duplicate@example.com",
@@ -249,7 +246,10 @@ func TestRegisterUser(t *testing.T) {
 		}
 		reqBody2, _ := json.Marshal(registerReq2)
 
-		resp2, _ := http.Post(url, "application/json", bytes.NewBuffer(reqBody2))
+		resp2, err := http.Post(url, "application/json", bytes.NewBuffer(reqBody2))
+		if err != nil {
+			t.Fatal("Could not make post request.")
+		}
 		defer resp2.Body.Close()
 
 		assert.Equal(t, http.StatusConflict, resp2.StatusCode)
@@ -269,7 +269,6 @@ func TestLoginUser(t *testing.T) {
 		t.Parallel()
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
-
 
 		// First register a user
 		registerReq := schemas.RegisterUserInput{
@@ -292,7 +291,12 @@ func TestLoginUser(t *testing.T) {
 		loginBody, _ := json.Marshal(loginReq)
 
 		loginURL := fmt.Sprintf("%s/users/login", setup.Server.GetURL())
-		loginResp, _ := http.Post(loginURL, "application/json", bytes.NewBuffer(loginBody))
+		loginResp, err := http.Post(loginURL, "application/json", bytes.NewBuffer(loginBody))
+
+		if err != nil {
+			t.Fatal("Could not make post request.")
+		}
+
 		defer loginResp.Body.Close()
 
 		// Assert response status
@@ -344,9 +348,13 @@ func TestLoginUser(t *testing.T) {
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
 
-
 		url := fmt.Sprintf("%s/users/login", setup.Server.GetURL())
-		resp, _ := http.Post(url, "application/json", bytes.NewBufferString("{invalid json"))
+		resp, err := http.Post(url, "application/json", bytes.NewBufferString("{invalid json"))
+
+		if err != nil {
+			t.Fatal("Could not make post request.")
+		}
+
 		defer resp.Body.Close()
 
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -357,7 +365,6 @@ func TestLoginUser(t *testing.T) {
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
 
-
 		loginReq := schemas.LoginUserInput{
 			Email:    "not-an-email",
 			Password: "password123",
@@ -365,7 +372,12 @@ func TestLoginUser(t *testing.T) {
 		reqBody, _ := json.Marshal(loginReq)
 
 		url := fmt.Sprintf("%s/users/login", setup.Server.GetURL())
-		resp, _ := http.Post(url, "application/json", bytes.NewBuffer(reqBody))
+		resp, err := http.Post(url, "application/json", bytes.NewBuffer(reqBody))
+
+		if err != nil {
+			t.Fatal("Could not make post request.")
+		}
+
 		defer resp.Body.Close()
 
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -376,7 +388,6 @@ func TestLoginUser(t *testing.T) {
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
 
-
 		loginReq := schemas.LoginUserInput{
 			Email:    "nonexistent@example.com",
 			Password: "password123",
@@ -384,7 +395,12 @@ func TestLoginUser(t *testing.T) {
 		reqBody, _ := json.Marshal(loginReq)
 
 		url := fmt.Sprintf("%s/users/login", setup.Server.GetURL())
-		resp, _ := http.Post(url, "application/json", bytes.NewBuffer(reqBody))
+		resp, err := http.Post(url, "application/json", bytes.NewBuffer(reqBody))
+
+		if err != nil {
+			t.Fatal("Could not make post request.")
+		}
+
 		defer resp.Body.Close()
 
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
@@ -398,7 +414,6 @@ func TestLoginUser(t *testing.T) {
 		t.Parallel()
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
-
 
 		// First register a user
 		registerReq := schemas.RegisterUserInput{
@@ -420,7 +435,12 @@ func TestLoginUser(t *testing.T) {
 		loginBody, _ := json.Marshal(loginReq)
 
 		loginURL := fmt.Sprintf("%s/users/login", setup.Server.GetURL())
-		loginResp, _ := http.Post(loginURL, "application/json", bytes.NewBuffer(loginBody))
+		loginResp, err := http.Post(loginURL, "application/json", bytes.NewBuffer(loginBody))
+
+		if err != nil {
+			t.Fatal("Could not make post request.")
+		}
+
 		defer loginResp.Body.Close()
 
 		assert.Equal(t, http.StatusUnauthorized, loginResp.StatusCode)
@@ -434,7 +454,6 @@ func TestLoginUser(t *testing.T) {
 		t.Parallel()
 		setup := testutils.WithIntegrationTestSetup(ctx, t)
 		defer setup.Cleanup()
-
 
 		// Register a user
 		registerReq := schemas.RegisterUserInput{

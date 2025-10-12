@@ -25,6 +25,7 @@ type Project struct {
 	Name      string    `db:"name" json:"name"`
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+	TeamID    int64     `db:"team_id" json:"team_id"`
 }
 
 type ProjectStatusColumn struct {
@@ -43,6 +44,21 @@ type RefreshToken struct {
 	ExpiresAt time.Time    `db:"expires_at" json:"expires_at"`
 	CreatedAt time.Time    `db:"created_at" json:"created_at"`
 	RevokedAt sql.NullTime `db:"revoked_at" json:"revoked_at"`
+}
+
+type Team struct {
+	ID          int64       `db:"id" json:"id"`
+	Name        string      `db:"name" json:"name"`
+	Description null.String `db:"description" json:"description"`
+	CreatedAt   time.Time   `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time   `db:"updated_at" json:"updated_at"`
+}
+
+type TeamMember struct {
+	ID       int64     `db:"id" json:"id"`
+	TeamID   int64     `db:"team_id" json:"team_id"`
+	UserID   int64     `db:"user_id" json:"user_id"`
+	JoinedAt time.Time `db:"joined_at" json:"joined_at"`
 }
 
 type User struct {
