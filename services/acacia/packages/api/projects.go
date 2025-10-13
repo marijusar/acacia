@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"acacia/packages/auth"
 	"acacia/packages/db"
 	"acacia/packages/httperr"
 	"acacia/packages/schemas"
@@ -127,8 +128,24 @@ func (c *ProjectsController) GetProjectDetailsByID(w http.ResponseWriter, r *htt
 	}
 
 	projectColumns, err := c.queries.GetProjectStatusColumnsByProjectID(r.Context(), int32(id))
+	if err != nil {
+		c.logger.WithError(err).Error("Failed to get project columns")
+		return httperr.WithStatus(errors.New("Internal server error"), http.StatusInternalServerError)
+	}
 
 	projectIssues, err := c.queries.GetProjectIssues(r.Context(), int32(id))
+	if err != nil {
+		c.logger.WithError(err).Error("Failed to get project issues")
+		return httperr.WithStatus(errors.New("Internal server error"), http.StatusInternalServerError)
+	}
+
+	// Ensure we always return arrays, not null
+	if projectColumns == nil {
+		projectColumns = []db.ProjectStatusColumn{}
+	}
+	if projectIssues == nil {
+		projectIssues = []db.Issue{}
+	}
 
 	resp := schemas.GetProjectDetailsResponse{
 		Project: project,
@@ -141,10 +158,22 @@ func (c *ProjectsController) GetProjectDetailsByID(w http.ResponseWriter, r *htt
 }
 
 func (c *ProjectsController) GetProjects(w http.ResponseWriter, r *http.Request) error {
-	projects, err := c.queries.GetProjects(r.Context())
+	// Get user ID from context (set by auth middleware)
+	userID, ok := auth.GetUserID(r)
+	if !ok {
+		return httperr.WithStatus(errors.New("Unauthorized"), http.StatusUnauthorized)
+	}
+
+	projects, err := c.queries.GetProjects(r.Context(), userID)
 	if err != nil {
 		c.logger.WithError(err).Error("Failed to get projects")
 		return httperr.WithStatus(errors.New("Internal server error"), http.StatusInternalServerError)
+	}
+
+	// Ensure we always return an array, not null
+	// When no projects are found, projects will be nil, so initialize empty slice
+	if projects == nil {
+		projects = []db.Project{}
 	}
 
 	json.NewEncoder(w).Encode(projects)

@@ -1,8 +1,11 @@
 -- name: GetProjects :many
 SELECT
-    *
+    p.*
 FROM
-    projects;
+    projects p
+    JOIN team_members tm ON p.team_id = tm.team_id
+WHERE
+    tm.user_id = $1;
 
 -- name: GetProjectByID :one
 SELECT

@@ -46,11 +46,18 @@ export const projectsResponse = z.array(project);
 
 export const createProjectParams = z.object({ name: z.string() });
 
+export const createProjectInput = z.object({
+  name: z.string().min(1, 'Project name is required').max(255, 'Project name must be less than 255 characters'),
+});
+
+export type CreateProjectInput = z.infer<typeof createProjectInput>;
+
 export const createProjectResponse = z.object({
   id: z.number(),
   name: z.string(),
   created_at: z.string(),
   updated_at: z.string(),
+  team_id: z.number(),
 });
 
 export const projectDashboardRouteArguments = z.object({ id: z.string() });

@@ -1,6 +1,8 @@
 'use server';
 
 import { userService } from '@/lib/services/user-service';
+import { teamService } from '@/lib/services/team-service';
+import { projectService } from '@/lib/services/project-service';
 import { loginInput, registerInput } from '@/lib/schemas/users';
 import { redirect } from 'next/navigation';
 import { LoginFormState } from '@/components/login-form/login-form';
@@ -29,7 +31,24 @@ export async function loginAction(
     };
   }
 
-  redirect('/projects');
+  // Fetch user's teams and projects in parallel
+  const [teams, projects] = await Promise.all([
+    teamService.getUserTeams(),
+    projectService.getProjects(),
+  ]);
+
+  // Check if user has teams
+  if (!teams || teams.length === 0) {
+    redirect('/teams');
+  }
+
+  // Check if user has projects
+  if (!projects || projects.length === 0) {
+    redirect('/');
+  }
+
+  // Redirect to first project's board
+  redirect(`/projects/${projects[0].id}/board`);
 }
 
 export type RegisterFormState = {

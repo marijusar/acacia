@@ -1,8 +1,12 @@
+'use server'
+
 import { projectService } from '@/lib/services/project-service';
+import { teamService } from '@/lib/services/team-service';
 import { AppSidebar } from '@/components/sidebar/sidebar';
 import { Input } from '@/components/ui/input';
 import { userService } from '@/lib/services/user-service';
 import { Heading1 } from 'lucide-react';
+import { redirect } from 'next/navigation';
 
 interface ProjectLayoutProps {
   children: React.ReactNode;
@@ -14,12 +18,22 @@ export default async function ProjectLayout({
   params,
 }: ProjectLayoutProps) {
   const { id } = await params;
-  await userService.getAuthStatus();
 
-  const [projectDetails, projects] = await Promise.all([
+  const [teams, projectDetails, projects] = await Promise.all([
+    teamService.getUserTeams(),
     projectService.getProjectDetails(id),
     projectService.getProjects(),
   ]);
+
+  // Check if user has teams
+  if (!teams || teams.length === 0) {
+    redirect('/teams');
+  }
+
+  // Check if user has projects
+  if (!projects || projects.length === 0) {
+    redirect('/');
+  }
 
   if (!projects || !projectDetails) {
     return <Heading1>Not implemented</Heading1>;

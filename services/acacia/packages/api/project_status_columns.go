@@ -45,6 +45,12 @@ func (c *ProjectStatusColumnsController) GetProjectStatusColumnsByProjectID(w ht
 		c.logger.WithError(err).Error("Failed to get project status columns by project ID")
 		return httperr.WithStatus(errors.New("Internal server error"), http.StatusInternalServerError)
 	}
+
+	// Ensure we always return an array, not null
+	if columns == nil {
+		columns = []db.ProjectStatusColumn{}
+	}
+
 	json.NewEncoder(w).Encode(columns)
 	return nil
 }

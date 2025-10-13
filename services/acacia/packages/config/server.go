@@ -46,6 +46,7 @@ func NewServer(d *Database, l *logrus.Logger, env *Environment) *Server {
 	projectsController := api.NewProjectsController(d.Queries, l)
 	projectColumnsController := api.NewProjectStatusColumnsController(d.Queries, l, d.Conn)
 	usersController := api.NewUsersController(d.Queries, l, jwtManager)
+	teamsController := api.NewTeamsController(d.Queries, l)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -57,6 +58,7 @@ func NewServer(d *Database, l *logrus.Logger, env *Environment) *Server {
 	r.Mount("/projects", routes.ProjectsRoutes(projectsController, authMiddlewares, authzMiddleware))
 	r.Mount("/project-columns", routes.ProjectStatusColumnsRoutes(projectColumnsController, authMiddlewares, authzMiddleware))
 	r.Mount("/users", routes.UsersRoutes(usersController, authMiddlewares))
+	r.Mount("/teams", routes.TeamsRoutes(teamsController, authMiddlewares))
 
 	httpServer := &http.Server{
 		Handler: r,

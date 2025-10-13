@@ -12,6 +12,7 @@ import { BaseHttpService, BaseServiceArguments } from './base-service';
 
 type CreateProjectParams = {
   name: string;
+  team_id: number;
 };
 
 type CreateProjectColumnParams = {

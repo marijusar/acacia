@@ -1,29 +1,76 @@
 'use server';
 
 import { projectService } from '@/lib/services/project-service';
+import { logger } from '@/lib/config/logger';
 import {
   createProjectParams,
+  createProjectInput,
   createProjectColumnParams,
   deleteProjectColumnParams,
+  type CreateProjectResponse,
 } from '@/lib/schemas/projects';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
-export async function createProjectAction(formData: FormData) {
-  const projectName = formData.get('project-name');
-  const body = {
-    name: projectName,
-  };
+export type CreateProjectFormState = {
+  error: string | null;
+};
 
-  const project = await projectService.createProject(
-    createProjectParams.parse(body)
+const initialState: CreateProjectFormState = {
+  error: null,
+};
+
+export async function createProjectAction(
+  _: CreateProjectFormState,
+  formData: FormData
+): Promise<CreateProjectFormState> {
+  let project: CreateProjectResponse | null = null;
+
+  try {
+    const data = {
+      name: formData.get('name'),
+    };
+
+    const teamIdStr = formData.get('team_id');
+
+    if (!teamIdStr) {
+      return {
+        error: 'Please select a team',
+      };
+    }
+
+    const validatedData = createProjectInput.parse(data);
+
+    project = await projectService.createProject({
+      name: validatedData.name,
+      team_id: parseInt(teamIdStr.toString()),
+    });
+
+    // Revalidate the projects list cache
+    revalidatePath('/projects');
+  } catch (error) {
+    if (error instanceof Error) {
+      return {
+        error: error.message,
+      };
+    }
+    return {
+      error: 'An unexpected error has occurred',
+    };
+  }
+
+  // Redirect outside try/catch so Next.js can throw properly
+  if (project?.id) {
+    redirect(`/projects/${project.id}/board`);
+  }
+
+  logger.error(
+    '[CREATE_PROJECT_ACTION] Project was created but id is missing',
+    { project }
   );
-
-  // Revalidate the projects list cache
-  revalidatePath('/projects');
-
-  // Redirect to the new project board
-  redirect(`/projects/${project.id}/board`);
+  return {
+    error: 'An unexpected error has occurred',
+  };
 }
 
 export async function createProjectColumnAction(formData: FormData) {
@@ -47,4 +94,3 @@ export async function deleteProjectColumnAction(formData: FormData) {
 
   revalidatePath(`/projects/`, 'layout');
 }
-

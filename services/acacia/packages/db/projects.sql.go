@@ -118,13 +118,16 @@ func (q *Queries) GetProjectIssues(ctx context.Context, projectID int32) ([]Issu
 
 const getProjects = `-- name: GetProjects :many
 SELECT
-    id, name, created_at, updated_at, team_id
+    p.id, p.name, p.created_at, p.updated_at, p.team_id
 FROM
-    projects
+    projects p
+    JOIN team_members tm ON p.team_id = tm.team_id
+WHERE
+    tm.user_id = $1
 `
 
-func (q *Queries) GetProjects(ctx context.Context) ([]Project, error) {
-	rows, err := q.db.QueryContext(ctx, getProjects)
+func (q *Queries) GetProjects(ctx context.Context, userID int64) ([]Project, error) {
+	rows, err := q.db.QueryContext(ctx, getProjects, userID)
 	if err != nil {
 		return nil, err
 	}
