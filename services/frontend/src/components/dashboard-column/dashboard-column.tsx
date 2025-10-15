@@ -33,7 +33,7 @@ export const DashboardColumn = ({
     <div
       onDrop={onDrop}
       onDragOver={(e) => e.preventDefault()}
-      className="h-full min-w-64 w-full bg-card mr-8 last:mr-0 rounded-md border p-3 border-accent"
+      className="h-full min-w-64 max-w-64 w-full bg-card mr-8 last:mr-0 rounded-md border p-3 border-accent"
     >
       <Heading4 className="mb-6">{name}</Heading4>
       {issues.map((issue) => (

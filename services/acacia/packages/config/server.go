@@ -3,6 +3,7 @@ package config
 import (
 	"acacia/packages/api"
 	"acacia/packages/auth"
+	"acacia/packages/crypto"
 	"acacia/packages/db"
 	"acacia/packages/routes"
 	"context"
@@ -36,6 +37,12 @@ func NewServer(d *Database, l *logrus.Logger, env *Environment) *Server {
 		30*24*time.Hour, // Refresh token: 30 days
 	)
 
+	// Initialize encryption service
+	encryptionService, err := crypto.NewEncryptionService(env.EncryptionKey)
+	if err != nil {
+		l.WithError(err).Fatal("Failed to initialize encryption service")
+	}
+
 	// Initialize authentication middleware
 	authMiddleware := auth.NewAuthMiddleware(jwtManager, d.Queries, l)
 
@@ -47,6 +54,7 @@ func NewServer(d *Database, l *logrus.Logger, env *Environment) *Server {
 	projectColumnsController := api.NewProjectStatusColumnsController(d.Queries, l, d.Conn)
 	usersController := api.NewUsersController(d.Queries, l, jwtManager)
 	teamsController := api.NewTeamsController(d.Queries, l)
+	teamLLMAPIKeysController := api.NewTeamLLMAPIKeysController(d.Queries, l, encryptionService)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -58,7 +66,7 @@ func NewServer(d *Database, l *logrus.Logger, env *Environment) *Server {
 	r.Mount("/projects", routes.ProjectsRoutes(projectsController, authMiddlewares, authzMiddleware))
 	r.Mount("/project-columns", routes.ProjectStatusColumnsRoutes(projectColumnsController, authMiddlewares, authzMiddleware))
 	r.Mount("/users", routes.UsersRoutes(usersController, authMiddlewares))
-	r.Mount("/teams", routes.TeamsRoutes(teamsController, authMiddlewares))
+	r.Mount("/teams", routes.TeamsRoutes(teamsController, teamLLMAPIKeysController, authMiddlewares, authzMiddleware))
 
 	httpServer := &http.Server{
 		Handler: r,

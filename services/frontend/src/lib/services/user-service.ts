@@ -13,7 +13,6 @@ import {
   type RegisterInput,
 } from '@/lib/schemas/users';
 import { BaseHttpService, type BaseServiceArguments } from './base-service';
-
 type UserServiceArguments = BaseServiceArguments & {};
 
 class UserService extends BaseHttpService {
@@ -65,6 +64,24 @@ class UserService extends BaseHttpService {
 
     return body;
   }
+
+  getAuthStatus = cache(async (): Promise<AuthStatusResponse> => {
+    const response = await fetch(`${this.url}/users/auth/me`, {
+      method: 'GET',
+      headers: { Cookie: await this.cookieService.getAuthCookies() },
+    });
+
+    if (!response.ok) {
+      const body = await response.json();
+      this.logger.error('[GET_AUTH_STATUS] Failed to get auth status', body);
+      redirect('/login');
+    }
+
+    const unsafeBody = await response.json();
+    const body = authStatusResponse.parse(unsafeBody);
+
+    return body;
+  });
 }
 
 export const userService = new UserService({

@@ -8,10 +8,11 @@ import (
 )
 
 type Environment struct {
-	Port        string
-	DatabaseURL string
-	Env         string
-	JWTSecret   string
+	Port          string
+	DatabaseURL   string
+	Env           string
+	JWTSecret     string
+	EncryptionKey []byte
 }
 
 const (
@@ -38,11 +39,21 @@ func LoadEnvironment() *Environment {
 		logrus.Fatal("JWT_SECRET environment variable required")
 	}
 
+	encryptionKey := os.Getenv("ENCRYPTION_KEY")
+	if encryptionKey == "" {
+		logrus.Fatal("ENCRYPTION_KEY environment variable required (must be 32 bytes)")
+	}
+
+	if len(encryptionKey) != 32 {
+		logrus.Fatal("ENCRYPTION_KEY must be exactly 32 bytes for AES-256")
+	}
+
 	return &Environment{
-		Env:         env,
-		Port:        port,
-		DatabaseURL: databaseURL,
-		JWTSecret:   jwtSecret,
+		Env:           env,
+		Port:          port,
+		DatabaseURL:   databaseURL,
+		JWTSecret:     jwtSecret,
+		EncryptionKey: []byte(encryptionKey),
 	}
 }
 

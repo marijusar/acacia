@@ -13,6 +13,8 @@ import {
 import { NavUser } from '../nav-user/nav-user';
 import { ProjectSwitcher } from '../project-switcher/project-switcher';
 import type { Project } from '@/lib/schemas/projects';
+import type { TeamResponse } from '@/lib/schemas/teams';
+import type { UserResponse } from '@/lib/schemas/users';
 import { CollapsibleItem } from './collapsible-item';
 import { DefaultItem } from './default-item';
 
@@ -25,7 +27,7 @@ const items = [
 
   {
     title: 'Chat',
-    url: (id: number) => `/projects/${id}/chat`,
+    url: (id: number) => `/projects/${id}/board?chat`,
     icon: MessageCircle,
   },
   {
@@ -45,12 +47,16 @@ type AppSidebarProps = {
   projectName: string;
   projectId: number;
   projects: Project[];
+  teams: TeamResponse[];
+  user: UserResponse;
 };
 
 export function AppSidebar({
   projectName,
   projectId,
   projects,
+  teams,
+  user,
 }: AppSidebarProps) {
   return (
     <SidebarProvider className="max-w-(--sidebar-width)">
@@ -82,10 +88,10 @@ export function AppSidebar({
         <SidebarFooter>
           <NavUser
             user={{
-              name: 'marijus',
-              email: 'marijus@acacia.com',
+              ...user,
               avatar: 'https://github.com/shadcn.png',
             }}
+            teams={teams}
           />
         </SidebarFooter>
       </Sidebar>

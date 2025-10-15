@@ -61,6 +61,17 @@ type TeamMember struct {
 	JoinedAt time.Time `db:"joined_at" json:"joined_at"`
 }
 
+type TeamsLlmApiKey struct {
+	ID           int64        `db:"id" json:"id"`
+	TeamID       int64        `db:"team_id" json:"team_id"`
+	Provider     string       `db:"provider" json:"provider"`
+	EncryptedKey string       `db:"encrypted_key" json:"encrypted_key"`
+	IsActive     sql.NullBool `db:"is_active" json:"is_active"`
+	CreatedAt    time.Time    `db:"created_at" json:"created_at"`
+	UpdatedAt    time.Time    `db:"updated_at" json:"updated_at"`
+	LastUsedAt   sql.NullTime `db:"last_used_at" json:"last_used_at"`
+}
+
 type User struct {
 	ID           int64     `db:"id" json:"id"`
 	Email        string    `db:"email" json:"email"`

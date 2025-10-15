@@ -6,6 +6,7 @@ import {
   IconLogout,
   IconNotification,
   IconUserCircle,
+  IconUsers,
 } from '@tabler/icons-react';
 
 import {
@@ -20,6 +21,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '../../components/ui/dropdown-menu';
 import {
@@ -28,15 +32,19 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '../../components/ui/sidebar';
+import type { TeamResponse } from '@/lib/schemas/teams';
+import Link from 'next/link';
 
 export function NavUser({
   user,
+  teams,
 }: {
   user: {
     name: string;
     email: string;
     avatar: string;
   };
+  teams: TeamResponse[];
 }) {
   const { isMobile } = useSidebar();
 
@@ -92,6 +100,23 @@ export function NavUser({
                 <IconCreditCard />
                 Billing
               </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer">
+                  <div className="mr-2 color-muted-foreground">
+                    <IconUsers size={16} />
+                  </div>
+                  Teams
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {teams.map((team) => (
+                    <DropdownMenuItem key={team.id} asChild>
+                      <Link href={`/teams/${team.id}/settings`}>
+                        {team.name}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
               <DropdownMenuItem className="cursor-pointer">
                 <IconNotification />
                 Notifications

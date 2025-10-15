@@ -108,11 +108,15 @@ func returnPort(port int) error {
 // Accepts the same parameters as config.NewServer: db.Queries and logrus.Logger
 func NewTestServer(d *config.Database, l *logrus.Logger) (*TestServer, error) {
 	// Create test environment
+	// Generate a 32-byte encryption key for testing
+	encryptionKey := []byte("test-encryption-key-32-bytes!!!!")
+
 	env := &config.Environment{
-		Port:        "8080",
-		DatabaseURL: "test",
-		Env:         "test",
-		JWTSecret:   "test-secret-key-for-testing-only",
+		Port:          "8080",
+		DatabaseURL:   "test",
+		Env:           "test",
+		JWTSecret:     "test-secret-key-for-testing-only",
+		EncryptionKey: encryptionKey,
 	}
 
 	server := config.NewServer(d, l, env)

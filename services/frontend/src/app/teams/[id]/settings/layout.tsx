@@ -5,48 +5,43 @@ import { teamService } from '@/lib/services/team-service';
 import { userService } from '@/lib/services/user-service';
 import { AppSidebar } from '@/components/sidebar/sidebar';
 import { Input } from '@/components/ui/input';
-import { Heading1 } from 'lucide-react';
 import { redirect } from 'next/navigation';
-import { ChatWrapper } from '@/components/chat';
 
-interface ProjectLayoutProps {
+interface TeamSettingsLayoutProps {
   children: React.ReactNode;
   params: Promise<{ id: string }>;
 }
 
-export default async function ProjectLayout({
+export default async function TeamSettingsLayout({
   children,
   params,
-}: ProjectLayoutProps) {
+}: TeamSettingsLayoutProps) {
   const { id } = await params;
 
-  const [teams, projectDetails, projects, authStatus] = await Promise.all([
+  // Verify user has access to this team
+  const [teams, projects, authStatus] = await Promise.all([
     teamService.getUserTeams(),
-    projectService.getProjectDetails(id),
     projectService.getProjects(),
     userService.getAuthStatus(),
   ]);
 
-  // Check if user has teams
-  if (!teams || teams.length === 0) {
+  const team = teams.find((t) => t.id === parseInt(id));
+
+  if (!team) {
     redirect('/teams');
   }
 
-  // Check if user has projects
+  // Check if user has projects for the sidebar
   if (!projects || projects.length === 0) {
     redirect('/');
-  }
-
-  if (!projects || !projectDetails) {
-    return <Heading1>Not implemented</Heading1>;
   }
 
   return (
     <div className="flex h-full overflow-y-hidden">
       <AppSidebar
         projects={projects}
-        projectName={projectDetails.name}
-        projectId={projectDetails.id}
+        projectName={team.name}
+        projectId={team.id}
         teams={teams}
         user={authStatus.user}
       />
@@ -54,12 +49,10 @@ export default async function ProjectLayout({
         <div className="h-16 w-full bg-secondary flex items-center justify-center sticky">
           <Input placeholder="Search.." className="max-w-100" />
         </div>
-        <div className="w-24"> </div>
         <div className="flex flex-1">
           <div className="flex pt-4 pb-4 pr-8 pl-8 flex-1 flex-col bg-background overflow-auto">
             {children}
           </div>
-          <ChatWrapper />
         </div>
       </div>
     </div>
