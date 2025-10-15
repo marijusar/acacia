@@ -34,7 +34,6 @@ class TeamService extends BaseHttpService {
     }
 
     const unsafeBody = await response.json();
-    console.log(unsafeBody);
     const body = userTeamsResponse.parse(unsafeBody);
 
     return body;

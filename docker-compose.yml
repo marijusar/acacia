@@ -59,7 +59,6 @@ services:
       - '3000'
     volumes:
       - ./services/frontend:/app
-      - /app/node_modules  # Use container's node_modules, not host's
     env_file : "./services/frontend/.env"
     environment:
       - NODE_ENV=development

@@ -1,10 +1,9 @@
-'use server'
+'use server';
 
 import { projectService } from '@/lib/services/project-service';
 import { teamService } from '@/lib/services/team-service';
 import { AppSidebar } from '@/components/sidebar/sidebar';
 import { Input } from '@/components/ui/input';
-import { userService } from '@/lib/services/user-service';
 import { Heading1 } from 'lucide-react';
 import { redirect } from 'next/navigation';
 
