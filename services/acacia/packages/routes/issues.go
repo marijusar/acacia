@@ -16,19 +16,19 @@ func IssuesRoutes(controller *api.IssuesController, authMiddlewares chi.Middlewa
 
 	// POST /issues - check access to the column_id from request body
 	r.Group(func(r chi.Router) {
-		r.Use(authzMiddleware.RequireResourceAccessFromBody(auth.ResourceTypeProjectStatusColumn, auth.ExtractColumnIDFromBody))
+		r.Use(authzMiddleware.RequireAccess(auth.CheckColumnAccessByBody()))
 		r.Post("/", httperr.WithCustomErrorHandler(controller.CreateIssue))
 	})
 
 	// PUT /issues - check access to the issue id from request body
 	r.Group(func(r chi.Router) {
-		r.Use(authzMiddleware.RequireResourceAccessFromBody(auth.ResourceTypeIssue, auth.ExtractIssueIDFromBody))
+		r.Use(authzMiddleware.RequireAccess(auth.CheckIssueAccessByBody()))
 		r.Put("/", httperr.WithCustomErrorHandler(controller.UpdateIssue))
 	})
 
 	// Routes that require issue-level authorization via URL parameter
 	r.Group(func(r chi.Router) {
-		r.Use(authzMiddleware.RequireResourceAccess(auth.ResourceTypeIssue, "id"))
+		r.Use(authzMiddleware.RequireAccess(auth.CheckIssueAccessByURLParam("id")))
 		r.Get("/{id}", httperr.WithCustomErrorHandler(controller.GetIssueByID))
 		r.Delete("/{id}", httperr.WithCustomErrorHandler(controller.DeleteIssue))
 	})

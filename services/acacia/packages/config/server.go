@@ -55,6 +55,7 @@ func NewServer(d *Database, l *logrus.Logger, env *Environment) *Server {
 	usersController := api.NewUsersController(d.Queries, l, jwtManager)
 	teamsController := api.NewTeamsController(d.Queries, l)
 	teamLLMAPIKeysController := api.NewTeamLLMAPIKeysController(d.Queries, l, encryptionService)
+	conversationsController := api.NewConversationsController(d.Queries, l)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -67,6 +68,7 @@ func NewServer(d *Database, l *logrus.Logger, env *Environment) *Server {
 	r.Mount("/project-columns", routes.ProjectStatusColumnsRoutes(projectColumnsController, authMiddlewares, authzMiddleware))
 	r.Mount("/users", routes.UsersRoutes(usersController, authMiddlewares))
 	r.Mount("/teams", routes.TeamsRoutes(teamsController, teamLLMAPIKeysController, authMiddlewares, authzMiddleware))
+	r.Mount("/conversations", routes.ConversationsRoutes(conversationsController, authMiddlewares, authzMiddleware))
 
 	httpServer := &http.Server{
 		Handler: r,
@@ -84,7 +86,6 @@ func NewServer(d *Database, l *logrus.Logger, env *Environment) *Server {
 func (s *Server) ListenAndServe(port string) {
 	s.httpServer.Addr = ":" + port
 	s.logger.WithField("port", port).Info("Starting server")
-	fmt.Printf("Starting server at port %s\n", port)
 	if err := s.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		s.logger.WithError(err).Error("Server failed to start")
 	}

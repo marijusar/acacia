@@ -19,13 +19,13 @@ func ProjectsRoutes(controller *api.ProjectsController, authMiddlewares chi.Midd
 
 	// POST /projects - check team membership from team_id in request body
 	r.Group(func(r chi.Router) {
-		r.Use(authzMiddleware.RequireResourceAccessFromBody(auth.ResourceTypeTeam, auth.ExtractTeamIDFromBody))
+		r.Use(authzMiddleware.RequireAccess(auth.CheckTeamMembershipByBody("team_id")))
 		r.Post("/", httperr.WithCustomErrorHandler(controller.CreateProject))
 	})
 
 	// Routes that require project-level authorization
 	r.Group(func(r chi.Router) {
-		r.Use(authzMiddleware.RequireResourceAccess(auth.ResourceTypeProject, "id"))
+		r.Use(authzMiddleware.RequireAccess(auth.CheckProjectAccessByURLParam("id")))
 		r.Get("/{id}", httperr.WithCustomErrorHandler(controller.GetProjectByID))
 		r.Get("/{id}/details", httperr.WithCustomErrorHandler(controller.GetProjectDetailsByID))
 		r.Put("/{id}", httperr.WithCustomErrorHandler(controller.UpdateProject))

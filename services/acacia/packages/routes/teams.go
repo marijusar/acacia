@@ -22,9 +22,9 @@ func TeamsRoutes(
 	r.Post("/", httperr.WithCustomErrorHandler(controller.CreateTeam))
 	r.Get("/", httperr.WithCustomErrorHandler(controller.GetUserTeams))
 
-	// Team LLM API Keys routes - require team-level authorization
+	// Team LLM API Keys routes - require team membership
 	r.Group(func(r chi.Router) {
-		r.Use(authzMiddleware.RequireResourceAccess(auth.ResourceTypeTeam, "id"))
+		r.Use(authzMiddleware.RequireAccess(auth.CheckTeamMembershipByURLParam("id")))
 		r.Post("/{id}/llm-api-keys", httperr.WithCustomErrorHandler(teamLLMAPIKeysController.CreateOrUpdateAPIKey))
 		r.Get("/{id}/llm-api-keys", httperr.WithCustomErrorHandler(teamLLMAPIKeysController.GetAPIKeys))
 		r.Delete("/{id}/llm-api-keys/{keyId}", httperr.WithCustomErrorHandler(teamLLMAPIKeysController.DeleteAPIKey))

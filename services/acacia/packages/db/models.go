@@ -11,6 +11,16 @@ import (
 	"github.com/guregu/null"
 )
 
+type Conversation struct {
+	ID        int64     `db:"id" json:"id"`
+	UserID    int64     `db:"user_id" json:"user_id"`
+	Title     string    `db:"title" json:"title"`
+	Provider  string    `db:"provider" json:"provider"`
+	Model     string    `db:"model" json:"model"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+}
+
 type Issue struct {
 	ID          int64       `db:"id" json:"id"`
 	Name        string      `db:"name" json:"name"`
@@ -18,6 +28,15 @@ type Issue struct {
 	CreatedAt   time.Time   `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time   `db:"updated_at" json:"updated_at"`
 	ColumnID    int64       `db:"column_id" json:"column_id"`
+}
+
+type Message struct {
+	ID             int64     `db:"id" json:"id"`
+	ConversationID int64     `db:"conversation_id" json:"conversation_id"`
+	Role           string    `db:"role" json:"role"`
+	Content        string    `db:"content" json:"content"`
+	SequenceNumber int32     `db:"sequence_number" json:"sequence_number"`
+	CreatedAt      time.Time `db:"created_at" json:"created_at"`
 }
 
 type Project struct {

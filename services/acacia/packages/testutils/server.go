@@ -126,8 +126,6 @@ func NewTestServer(d *config.Database, l *logrus.Logger) (*TestServer, error) {
 		return nil, err
 	}
 
-	fmt.Printf("Taking port %d\n", port)
-
 	return &TestServer{
 		Server: server,
 		port:   port,
@@ -197,6 +195,7 @@ func WithIntegrationTestSetup(ctx context.Context, t *testing.T) *IntegrationTes
 		Conn:    testDB.DB,
 	}
 	logger := logrus.New()
+	logger.SetLevel(logrus.ErrorLevel)
 	server, err := NewTestServer(database, logger)
 	require.NoError(t, err)
 
