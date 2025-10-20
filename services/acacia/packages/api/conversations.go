@@ -1,31 +1,40 @@
 package api
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"acacia/packages/auth"
 	"acacia/packages/db"
 	"acacia/packages/httperr"
 	"acacia/packages/schemas"
+	"acacia/packages/services"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 )
 
 type ConversationsController struct {
-	queries   *db.Queries
-	logger    *logrus.Logger
-	validator *validator.Validate
+	queries             *db.Queries
+	logger              *logrus.Logger
+	validator           *validator.Validate
+	conversationService *services.ConversationService
 }
 
-func NewConversationsController(queries *db.Queries, logger *logrus.Logger) *ConversationsController {
+func NewConversationsController(
+	queries *db.Queries,
+	logger *logrus.Logger,
+	conversationService *services.ConversationService,
+) *ConversationsController {
 	return &ConversationsController{
-		queries:   queries,
-		logger:    logger,
-		validator: validator.New(),
+		queries:             queries,
+		logger:              logger,
+		validator:           validator.New(),
+		conversationService: conversationService,
 	}
 }
 
@@ -39,6 +48,12 @@ func (c *ConversationsController) CreateConversation(w http.ResponseWriter, r *h
 	var req schemas.CreateConversationInput
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return httperr.WithStatus(errors.New("Invalid JSON"), http.StatusBadRequest)
+	}
+
+	teamID, err := c.queries.GetTeamIDByProject(context.Background(), req.ProjectID)
+
+	if err != nil {
+		return httperr.WithStatus(errors.New("Cannot find project's team"), http.StatusInternalServerError)
 	}
 
 	// Validate input
@@ -58,6 +73,7 @@ func (c *ConversationsController) CreateConversation(w http.ResponseWriter, r *h
 		Provider: req.Provider,
 		Model:    req.Model,
 		Title:    title,
+		TeamID:   teamID,
 	}
 
 	conversation, err := c.queries.CreateConversation(r.Context(), createParams)
@@ -82,7 +98,7 @@ func (c *ConversationsController) CreateConversation(w http.ResponseWriter, r *h
 	return nil
 }
 
-// SendMessage sends a message to an existing conversation
+// SendMessage sends a message to an existing conversation and streams the LLM response
 func (c *ConversationsController) SendMessage(w http.ResponseWriter, r *http.Request) error {
 	userID, ok := auth.GetUserID(r)
 	if !ok {
@@ -114,20 +130,52 @@ func (c *ConversationsController) SendMessage(w http.ResponseWriter, r *http.Req
 		return httperr.WithStatus(errors.New("Forbidden: insufficient permissions"), http.StatusForbidden)
 	}
 
-	// Create user message
-	messageParams := db.CreateMessageParams{
-		ConversationID: req.ConversationID,
-		Role:           "user",
-		Content:        req.Content,
-	}
+	// Set headers for Server-Sent Events
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	_, err = c.queries.CreateMessage(r.Context(), messageParams)
+	// Get streaming channel from conversation service
+	streamChan, err := c.conversationService.ReplyToMessage(r.Context(), req.ConversationID, req.Content)
 	if err != nil {
-		c.logger.WithError(err).Error("Failed to create message")
-		return httperr.WithStatus(errors.New("Internal server error"), http.StatusInternalServerError)
+		c.logger.WithError(err).Error("Failed to start reply stream")
+		// Send error as SSE event
+		fmt.Fprintf(w, "event: error\ndata: %s\n\n", err.Error())
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
+		return nil
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	// Stream chunks to client
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		return httperr.WithStatus(errors.New("Streaming not supported"), http.StatusInternalServerError)
+	}
+
+	for chunk := range streamChan {
+		if chunk.Error != nil {
+			c.logger.WithError(chunk.Error).Error("Error in stream")
+			fmt.Fprintf(w, "event: error\ndata: %s\n\n", chunk.Error.Error())
+			flusher.Flush()
+			break
+		}
+
+		if chunk.Content != "" {
+			// Send content chunk
+			fmt.Fprintf(w, "event: message\ndata: %s\n\n", chunk.Content)
+			flusher.Flush()
+		}
+
+		if chunk.Done {
+			// Send done event
+			fmt.Fprintf(w, "event: done\ndata: \n\n")
+			flusher.Flush()
+			break
+		}
+	}
+
 	return nil
 }
 

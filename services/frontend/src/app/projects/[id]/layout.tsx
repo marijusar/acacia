@@ -3,6 +3,7 @@
 import { projectService } from '@/lib/services/project-service';
 import { teamService } from '@/lib/services/team-service';
 import { userService } from '@/lib/services/user-service';
+import { conversationService } from '@/lib/services/conversation-service';
 import { AppSidebar } from '@/components/sidebar/sidebar';
 import { Input } from '@/components/ui/input';
 import { Heading1 } from 'lucide-react';
@@ -20,12 +21,14 @@ export default async function ProjectLayout({
 }: ProjectLayoutProps) {
   const { id } = await params;
 
-  const [teams, projectDetails, projects, authStatus] = await Promise.all([
-    teamService.getUserTeams(),
-    projectService.getProjectDetails(id),
-    projectService.getProjects(),
-    userService.getAuthStatus(),
-  ]);
+  const [teams, projectDetails, projects, authStatus, latestConversation] =
+    await Promise.all([
+      teamService.getUserTeams(),
+      projectService.getProjectDetails(id),
+      projectService.getProjects(),
+      userService.getAuthStatus(),
+      conversationService.getLatestConversation(),
+    ]);
 
   // Check if user has teams
   if (!teams || teams.length === 0) {
@@ -59,7 +62,10 @@ export default async function ProjectLayout({
           <div className="flex pt-4 pb-4 pr-8 pl-8 flex-1 flex-col bg-background overflow-auto">
             {children}
           </div>
-          <ChatWrapper />
+          <ChatWrapper
+            conversation={latestConversation}
+            projectId={projectDetails.id}
+          />
         </div>
       </div>
     </div>

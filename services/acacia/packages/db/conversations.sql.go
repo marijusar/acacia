@@ -10,14 +10,15 @@ import (
 )
 
 const createConversation = `-- name: CreateConversation :one
-INSERT INTO conversations (user_id, title, provider, model)
-    VALUES ($1, $2, $3, $4)
+INSERT INTO conversations (user_id, team_id, title, provider, model)
+    VALUES ($1, $2, $3, $4, $5)
 RETURNING
-    id, user_id, title, provider, model, created_at, updated_at
+    id, user_id, title, provider, model, created_at, updated_at, team_id
 `
 
 type CreateConversationParams struct {
 	UserID   int64  `db:"user_id" json:"user_id"`
+	TeamID   int64  `db:"team_id" json:"team_id"`
 	Title    string `db:"title" json:"title"`
 	Provider string `db:"provider" json:"provider"`
 	Model    string `db:"model" json:"model"`
@@ -26,6 +27,7 @@ type CreateConversationParams struct {
 func (q *Queries) CreateConversation(ctx context.Context, arg CreateConversationParams) (Conversation, error) {
 	row := q.db.QueryRowContext(ctx, createConversation,
 		arg.UserID,
+		arg.TeamID,
 		arg.Title,
 		arg.Provider,
 		arg.Model,
@@ -39,6 +41,7 @@ func (q *Queries) CreateConversation(ctx context.Context, arg CreateConversation
 		&i.Model,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TeamID,
 	)
 	return i, err
 }
@@ -55,7 +58,7 @@ func (q *Queries) DeleteConversation(ctx context.Context, id int64) error {
 
 const getConversationByID = `-- name: GetConversationByID :one
 SELECT
-    id, user_id, title, provider, model, created_at, updated_at
+    id, user_id, title, provider, model, created_at, updated_at, team_id
 FROM
     conversations
 WHERE
@@ -73,13 +76,14 @@ func (q *Queries) GetConversationByID(ctx context.Context, id int64) (Conversati
 		&i.Model,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TeamID,
 	)
 	return i, err
 }
 
 const getConversationsByUser = `-- name: GetConversationsByUser :many
 SELECT
-    id, user_id, title, provider, model, created_at, updated_at
+    id, user_id, title, provider, model, created_at, updated_at, team_id
 FROM
     conversations
 WHERE
@@ -105,6 +109,7 @@ func (q *Queries) GetConversationsByUser(ctx context.Context, userID int64) ([]C
 			&i.Model,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.TeamID,
 		); err != nil {
 			return nil, err
 		}
@@ -121,7 +126,7 @@ func (q *Queries) GetConversationsByUser(ctx context.Context, userID int64) ([]C
 
 const getLatestConversationByUser = `-- name: GetLatestConversationByUser :one
 SELECT
-    id, user_id, title, provider, model, created_at, updated_at
+    id, user_id, title, provider, model, created_at, updated_at, team_id
 FROM
     conversations
 WHERE
@@ -142,6 +147,7 @@ func (q *Queries) GetLatestConversationByUser(ctx context.Context, userID int64)
 		&i.Model,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TeamID,
 	)
 	return i, err
 }
@@ -155,7 +161,7 @@ SET
 WHERE
     id = $1
 RETURNING
-    id, user_id, title, provider, model, created_at, updated_at
+    id, user_id, title, provider, model, created_at, updated_at, team_id
 `
 
 type UpdateConversationTitleParams struct {
@@ -174,6 +180,7 @@ func (q *Queries) UpdateConversationTitle(ctx context.Context, arg UpdateConvers
 		&i.Model,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TeamID,
 	)
 	return i, err
 }

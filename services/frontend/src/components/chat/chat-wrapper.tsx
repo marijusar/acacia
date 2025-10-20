@@ -3,8 +3,14 @@
 import { useSearchParams, useRouter } from 'next/navigation';
 import { SlidePanel } from '@/components/ui/slide-panel';
 import { Chat } from './chat';
+import type { ConversationWithMessagesResponse } from '@/lib/schemas/conversation';
 
-export function ChatWrapper() {
+interface ChatWrapperProps {
+  conversation?: ConversationWithMessagesResponse;
+  projectId: number;
+}
+
+export function ChatWrapper({ conversation, projectId }: ChatWrapperProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const isChatOpen = searchParams.has('chat');
@@ -17,7 +23,11 @@ export function ChatWrapper() {
 
   return (
     <SlidePanel isOpen={isChatOpen} onClose={handleClose} width="400px">
-      <Chat onClose={handleClose} />
+      <Chat
+        onClose={handleClose}
+        conversation={conversation}
+        projectId={projectId}
+      />
     </SlidePanel>
   );
 }

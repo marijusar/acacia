@@ -19,6 +19,7 @@ type Conversation struct {
 	Model     string    `db:"model" json:"model"`
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+	TeamID    int64     `db:"team_id" json:"team_id"`
 }
 
 type Issue struct {

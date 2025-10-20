@@ -2,10 +2,10 @@
 
 import { useLayoutEffect, useRef } from 'react';
 import { ChatMessage } from './chat-message';
-import type { Message } from './types';
+import type { ChatMessage as ChatMessageType } from './chat';
 
 interface ChatMessagesProps {
-  messages: Message[];
+  messages: ChatMessageType[];
 }
 
 export function ChatMessages({ messages }: ChatMessagesProps) {
@@ -23,8 +23,8 @@ export function ChatMessages({ messages }: ChatMessagesProps) {
         </div>
       ) : (
         <>
-          {messages.map((message) => (
-            <ChatMessage key={message.id} message={message} />
+          {messages.map((message, index) => (
+            <ChatMessage key={index} message={message} />
           ))}
           <div ref={bottomRef} />
         </>

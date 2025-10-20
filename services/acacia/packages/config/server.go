@@ -5,11 +5,12 @@ import (
 	"acacia/packages/auth"
 	"acacia/packages/crypto"
 	"acacia/packages/db"
+	"acacia/packages/llm"
 	"acacia/packages/routes"
+	"acacia/packages/services"
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -49,13 +50,24 @@ func NewServer(d *Database, l *logrus.Logger, env *Environment) *Server {
 	// Initialize authorization middleware (single instance)
 	authzMiddleware := auth.NewAuthorizationMiddleware(d.Queries, l)
 
+	// Initialize LLM provider registry
+	providerRegistry := llm.NewProviderRegistry()
+
+	// Initialize conversation service
+	conversationService := services.NewConversationService(
+		d.Queries,
+		providerRegistry,
+		encryptionService,
+		l,
+	)
+
 	issuesController := api.NewIssuesController(d.Queries, l)
 	projectsController := api.NewProjectsController(d.Queries, l)
 	projectColumnsController := api.NewProjectStatusColumnsController(d.Queries, l, d.Conn)
 	usersController := api.NewUsersController(d.Queries, l, jwtManager)
 	teamsController := api.NewTeamsController(d.Queries, l)
 	teamLLMAPIKeysController := api.NewTeamLLMAPIKeysController(d.Queries, l, encryptionService)
-	conversationsController := api.NewConversationsController(d.Queries, l)
+	conversationsController := api.NewConversationsController(d.Queries, l, conversationService)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)

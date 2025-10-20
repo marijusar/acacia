@@ -3,7 +3,6 @@
 import { projectService } from '@/lib/services/project-service';
 import { logger } from '@/lib/config/logger';
 import {
-  createProjectParams,
   createProjectInput,
   createProjectColumnParams,
   deleteProjectColumnParams,

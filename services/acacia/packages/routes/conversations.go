@@ -18,8 +18,11 @@ func ConversationsRoutes(
 	// Apply authentication middleware to all routes
 	r.Use(authMiddlewares...)
 
-	// POST /conversations - create new conversation (no specific resource auth needed, just authenticated)
-	r.Post("/", httperr.WithCustomErrorHandler(controller.CreateConversation))
+	// POST /conversations - create new conversation (need access to the project to use team's API key)
+	r.Group(func(r chi.Router) {
+		r.Use(authzMiddleware.RequireAccess(auth.CheckProjectAccessByBody()))
+		r.Post("/", httperr.WithCustomErrorHandler(controller.CreateConversation))
+	})
 
 	// POST /conversations/messages - send message to conversation (check conversation ownership)
 	r.Group(func(r chi.Router) {
@@ -27,7 +30,6 @@ func ConversationsRoutes(
 		r.Post("/messages", httperr.WithCustomErrorHandler(controller.SendMessage))
 	})
 
-	// GET /conversations/latest - get latest conversation (no specific resource auth, just authenticated)
 	r.Get("/latest", httperr.WithCustomErrorHandler(controller.GetLatestConversation))
 
 	return r

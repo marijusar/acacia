@@ -17,7 +17,7 @@ export const CreateTaskDialog = async ({
   columns,
 }: CreateTaskDialogProps) => {
   return (
-    <TaskFormProvider trigger={children} onSubmit={createIssueAction}>
+    <TaskFormProvider trigger={children} action={createIssueAction}>
       <div className="w-full flex">
         <div className="flex flex-col flex-1">
           <NameInput />

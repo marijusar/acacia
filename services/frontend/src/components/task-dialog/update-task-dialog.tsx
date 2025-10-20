@@ -19,11 +19,7 @@ export const UpdateTaskDialog = ({
   issue,
 }: CreateTaskDialogProps) => {
   return (
-    <TaskFormProvider
-      issue={issue}
-      trigger={children}
-      onSubmit={updateIssueForm}
-    >
+    <TaskFormProvider issue={issue} trigger={children} action={updateIssueForm}>
       <div className="w-full flex">
         <div className="flex flex-col flex-1">
           <NameInput />

@@ -1,6 +1,6 @@
 -- name: CreateConversation :one
-INSERT INTO conversations (user_id, title, provider, model)
-    VALUES ($1, $2, $3, $4)
+INSERT INTO conversations (user_id, team_id, title, provider, model)
+    VALUES ($1, $2, $3, $4, $5)
 RETURNING
     *;
 

@@ -10,14 +10,32 @@ import {
 } from 'react';
 import { Dialog, DialogContent, DialogTrigger } from '../ui/dialog';
 import { Issue } from '@/lib/schemas/projects';
+import { SerializedEditorState } from 'lexical';
 
 const activeFormFieldsDefaultState = { name: false, description: false };
 
+const initialEditorState: SerializedEditorState = {
+  root: {
+    children: [],
+    direction: 'ltr',
+    format: '',
+    indent: 0,
+    type: 'root',
+    version: 1,
+  },
+};
+
 type CreateDialogFormState = {
   name: string;
-  description: string;
+  description: SerializedEditorState;
   column_id: string | undefined;
 };
+
+const initialState = {
+  name: '',
+  description: initialEditorState,
+  column_id: undefined,
+} satisfies CreateDialogFormState;
 
 const TaskFormContext = createContext<{
   active: typeof activeFormFieldsDefaultState;
@@ -27,26 +45,29 @@ const TaskFormContext = createContext<{
 } | null>(null);
 
 type TaskFormProps = {
-  onSubmit: (formData: FormData) => Promise<void>;
+  action: (formData: FormData) => Promise<void>;
   trigger: ReactNode;
   children: ReactNode;
   issue?: Issue;
 };
 
 export const TaskFormProvider = ({
-  onSubmit,
+  action,
   trigger,
   children,
   issue,
 }: TaskFormProps) => {
   const [open, setOpen] = useState(false);
 
-  const [formState, setFormState] = useState<CreateDialogFormState>({
-    name: '',
-    ...issue,
-    description: issue?.description ?? '',
-    column_id: issue ? issue.column_id.toString() : undefined,
-  });
+  const [formState, setFormState] = useState<CreateDialogFormState>(
+    issue
+      ? {
+          ...issue,
+          column_id: issue?.column_id.toString(),
+          description: initialState.description,
+        }
+      : initialState
+  );
 
   const setFieldActive = (field: keyof CreateDialogFormState) => {
     setActiveFormFields((fields) => ({
@@ -73,8 +94,9 @@ export const TaskFormProvider = ({
       >
         <form
           action={async (formData) => {
-            await onSubmit(formData);
+            await action(formData);
             setOpen(false);
+            setFormState(initialState);
           }}
           className="flex w-full"
         >

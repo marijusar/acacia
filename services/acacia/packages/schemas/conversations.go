@@ -11,6 +11,7 @@ type CreateConversationInput struct {
 	Provider       string `json:"provider" validate:"required"`
 	Model          string `json:"model" validate:"required"`
 	InitialMessage string `json:"initial_message" validate:"required,min=1,max=10000"`
+	ProjectID      int64  `json:"project_id"`
 }
 
 type SendMessageInput struct {
@@ -36,7 +37,6 @@ type ConversationResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
-
 
 type ConversationWithMessagesResponse struct {
 	Conversation ConversationResponse `json:"conversation"`
