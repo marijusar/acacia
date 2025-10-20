@@ -8,6 +8,7 @@ import (
 	"acacia/packages/llm"
 	"acacia/packages/routes"
 	"acacia/packages/services"
+	"acacia/packages/storage"
 	"context"
 	"database/sql"
 	"errors"
@@ -61,7 +62,19 @@ func NewServer(d *Database, l *logrus.Logger, env *Environment) *Server {
 		l,
 	)
 
-	issuesController := api.NewIssuesController(d.Queries, l)
+	// Initialize S3 storage
+	s3Storage, err := storage.NewS3Storage(storage.S3Config{
+		Bucket:          env.AWSS3Bucket,
+		Region:          env.AWSRegion,
+		AccessKeyID:     env.AWSAccessKeyID,
+		SecretAccessKey: env.AWSSecretKey,
+		Endpoint:        env.AWSEndpoint,
+	}, l)
+	if err != nil {
+		l.WithError(err).Fatal("Failed to initialize S3 storage")
+	}
+
+	issuesController := api.NewIssuesController(d.Queries, l, s3Storage)
 	projectsController := api.NewProjectsController(d.Queries, l)
 	projectColumnsController := api.NewProjectStatusColumnsController(d.Queries, l, d.Conn)
 	usersController := api.NewUsersController(d.Queries, l, jwtManager)

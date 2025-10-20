@@ -12,6 +12,7 @@ export const TicketCard = ({
   name,
   description,
   column_id,
+  description_serialized,
   ...rest
 }: TicketCardProps) => {
   const [dragging, setDragging] = useState(false);
@@ -24,6 +25,7 @@ export const TicketCard = ({
           id,
           name,
           description,
+          description_serialized,
           column_id,
         })
       )

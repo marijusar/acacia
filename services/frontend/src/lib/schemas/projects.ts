@@ -25,12 +25,14 @@ export const issue = z.object({
   column_id: z.number(),
   name: z.string(),
   description: z.string().nullable(),
+  description_serialized: z.string().nullable().optional(),
 });
 
 export const updateIssueRequestBody = z.object({
   id: z.string().transform((v) => parseInt(v)),
   column_id: z.string().transform((v) => parseInt(v)),
   description: z.string().nullable(),
+  description_serialized: z.string().optional(),
   name: z.string(),
 });
 
@@ -47,7 +49,10 @@ export const projectsResponse = z.array(project);
 export const createProjectParams = z.object({ name: z.string() });
 
 export const createProjectInput = z.object({
-  name: z.string().min(1, 'Project name is required').max(255, 'Project name must be less than 255 characters'),
+  name: z
+    .string()
+    .min(1, 'Project name is required')
+    .max(255, 'Project name must be less than 255 characters'),
 });
 
 export type CreateProjectInput = z.infer<typeof createProjectInput>;

@@ -1,16 +1,18 @@
 package schemas
 
 type CreateIssueInput struct {
-	Name        string  `json:"name" validate:"required"`
-	Description *string `json:"description" validate:"required"`
-	ColumnId    int64   `json:"column_id" validate:"required"`
+	Name                 string  `json:"name" validate:"required"`
+	Description          *string `json:"description" validate:"required"`
+	DescriptionSerialized *string `json:"description_serialized"`
+	ColumnId             int64   `json:"column_id" validate:"required"`
 }
 
 type UpdateIssueInput struct {
-	ID          int64  `json:"id" validate:"required"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	ColumnId    int64  `json:"column_id"`
+	ID                    int64   `json:"id" validate:"required"`
+	Name                  string  `json:"name"`
+	Description           string  `json:"description"`
+	DescriptionSerialized *string `json:"description_serialized"`
+	ColumnId              int64   `json:"column_id"`
 }
 
 type ReassignIssuesInput struct {

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -20,12 +21,19 @@ import (
 type IssuesController struct {
 	queries *db.Queries
 	logger  *logrus.Logger
+	storage S3Storage
 }
 
-func NewIssuesController(queries *db.Queries, logger *logrus.Logger) *IssuesController {
+type S3Storage interface {
+	UploadDescription(ctx context.Context, issueID int64, content string) error
+	GetDescription(ctx context.Context, issueID int64) (string, error)
+}
+
+func NewIssuesController(queries *db.Queries, logger *logrus.Logger, storage S3Storage) *IssuesController {
 	return &IssuesController{
 		queries: queries,
 		logger:  logger,
+		storage: storage,
 	}
 }
 
@@ -61,7 +69,28 @@ func (c *IssuesController) GetIssueByID(w http.ResponseWriter, r *http.Request) 
 		return httperr.WithStatus(errors.New("packages server error"), http.StatusInternalServerError)
 	}
 
-	json.NewEncoder(w).Encode(issue)
+	// Try to fetch serialized description from S3
+	var descriptionSerialized *string
+	serialized, err := c.storage.GetDescription(r.Context(), id)
+	if err != nil {
+		// Log error but don't fail the request if S3 fetch fails
+		c.logger.WithError(err).Warn("Failed to fetch serialized description from S3")
+	} else if serialized != "" {
+		descriptionSerialized = &serialized
+	}
+
+	// Create response with serialized description
+	response := map[string]interface{}{
+		"id":                      issue.ID,
+		"name":                    issue.Name,
+		"description":             issue.Description,
+		"column_id":               issue.ColumnID,
+		"created_at":              issue.CreatedAt,
+		"updated_at":              issue.UpdatedAt,
+		"description_serialized":  descriptionSerialized,
+	}
+
+	json.NewEncoder(w).Encode(response)
 
 	return nil
 }
@@ -86,6 +115,16 @@ func (c *IssuesController) CreateIssue(w http.ResponseWriter, r *http.Request) e
 	if err != nil {
 		c.logger.WithError(err).Error("Failed to create issue")
 		return httperr.WithStatus(errors.New("packages server error"), http.StatusInternalServerError)
+	}
+
+	// Upload serialized description to S3 if provided
+	if req.DescriptionSerialized != nil && *req.DescriptionSerialized != "" {
+		if err := c.storage.UploadDescription(r.Context(), issue.ID, *req.DescriptionSerialized); err != nil {
+			// S3 upload failed - should we rollback? For now, we'll delete the issue
+			c.queries.DeleteIssue(r.Context(), issue.ID)
+			c.logger.WithError(err).Error("Failed to upload description to S3, rolled back issue creation")
+			return httperr.WithStatus(errors.New("Failed to save issue description"), http.StatusInternalServerError)
+		}
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -115,6 +154,14 @@ func (c *IssuesController) UpdateIssue(w http.ResponseWriter, r *http.Request) e
 		}
 		c.logger.WithError(err).Error("Failed to update issue")
 		return httperr.WithStatus(errors.New("Internal server error"), http.StatusInternalServerError)
+	}
+
+	// Upload serialized description to S3 if provided
+	if req.DescriptionSerialized != nil && *req.DescriptionSerialized != "" {
+		if err := c.storage.UploadDescription(r.Context(), issue.ID, *req.DescriptionSerialized); err != nil {
+			c.logger.WithError(err).Error("Failed to upload description to S3 during update")
+			return httperr.WithStatus(errors.New("Failed to save issue description"), http.StatusInternalServerError)
+		}
 	}
 
 	json.NewEncoder(w).Encode(issue)

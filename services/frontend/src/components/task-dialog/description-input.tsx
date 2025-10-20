@@ -3,10 +3,10 @@
 import { twMerge } from 'tailwind-merge';
 import { Editor } from '../blocks/editor-00/editor';
 import { useTaskForm } from './task-form-context';
-import { $getRoot } from 'lexical';
 
 export const DescriptionInput = () => {
-  const { setActive, setState } = useTaskForm();
+  const { setActive, setState, initialSerializedState } = useTaskForm();
+  console.log(initialSerializedState);
   return (
     <div
       onClick={(e) => {
@@ -20,10 +20,10 @@ export const DescriptionInput = () => {
           'w-full min-h-36 mt-8 mr-4 focus-within:border-primary',
           'border shadow'
         )}
-        onSerializedChange={(v) =>
-          setState((state) => ({ ...state, description: v }))
+        editorSerializedState={initialSerializedState || undefined}
+        onChange={(editorState) =>
+          setState((state) => ({ ...state, description: editorState }))
         }
-        onChange={(s) => s.read(() => $getRoot().getTextContent())}
       />
     </div>
   );
