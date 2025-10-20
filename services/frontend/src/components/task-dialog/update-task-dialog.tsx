@@ -4,22 +4,21 @@ import { NameInput } from './name-input';
 import { DescriptionInput } from './description-input';
 import { SelectColumn } from './select-column';
 import { Button } from '../ui/button';
-import { Issue, ProjectStatusColumn } from '@/lib/schemas/projects';
-import { ReactNode } from 'react';
+import { ProjectStatusColumn } from '@/lib/schemas/projects';
+import { issuesService } from '@/lib/services/issues-service';
 
 type CreateTaskDialogProps = {
-  children: ReactNode;
   columns: ProjectStatusColumn[];
-  issue: Issue;
+  issueId: number;
 };
 
-export const UpdateTaskDialog = ({
-  children,
+export const UpdateTaskDialog = async ({
   columns,
-  issue,
+  issueId,
 }: CreateTaskDialogProps) => {
+  const issue = await issuesService.getIssueById(issueId);
   return (
-    <TaskFormProvider issue={issue} trigger={children} action={updateIssueForm}>
+    <TaskFormProvider issue={issue} action={updateIssueForm}>
       <div className="w-full flex">
         <div className="flex flex-col flex-1">
           <NameInput />

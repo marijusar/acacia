@@ -2,7 +2,7 @@ import { cache } from 'react';
 import { env } from '@/lib/config/env';
 import { logger } from '@/lib/config/logger';
 import { BaseHttpService, BaseServiceArguments } from './base-service';
-import { Issue } from '../schemas/projects';
+import { issue, Issue } from '../schemas/projects';
 
 type CreateIssueParams = {
   name: string;
@@ -82,6 +82,27 @@ class IssuesService extends BaseHttpService {
       this.logger.error(message, body);
       throw new Error(message);
     }
+  }
+
+  async getIssueById(id: number) {
+    const authCookies = await this.cookieService.getAuthCookies();
+
+    const response = await fetch(`${this.url}/issues/${id}`, {
+      headers: {
+        Cookie: authCookies,
+      },
+    });
+
+    if (!response.ok) {
+      const body = await response.json();
+      const message = `[CREATE_ISSUE] Failed to update issue`;
+      this.logger.error(message, body);
+      throw new Error(message);
+    }
+
+    const json = await response.json();
+
+    return issue.parse(json);
   }
 }
 

@@ -17,7 +17,6 @@ export const DashboardColumns = ({
           {...column}
           key={column.id}
           issues={columnIssueMap[column.id]}
-          columns={columns}
         />
       ))}
     </div>

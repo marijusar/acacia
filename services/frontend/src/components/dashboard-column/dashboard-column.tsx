@@ -13,14 +13,12 @@ import { UpdateTaskDialog } from '../task-dialog';
 
 type DashboardColumnProps = ProjectStatusColumn & {
   issues: Issue[];
-  columns: ProjectStatusColumn[];
 };
 
 export const DashboardColumn = ({
   name,
   issues = [],
   id,
-  columns,
 }: DashboardColumnProps) => {
   const onDrop = async (e: DragEvent<HTMLDivElement>) => {
     const droppedIssue = issue.parse(
@@ -37,9 +35,7 @@ export const DashboardColumn = ({
     >
       <Heading4 className="mb-6">{name}</Heading4>
       {issues.map((issue) => (
-        <UpdateTaskDialog key={issue.id} columns={columns} issue={issue}>
-          <TicketCard {...issue} />
-        </UpdateTaskDialog>
+        <TicketCard key={issue.id} {...issue} />
       ))}
     </div>
   );

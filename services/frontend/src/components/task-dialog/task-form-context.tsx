@@ -8,9 +8,10 @@ import {
   useContext,
   useState,
 } from 'react';
-import { Dialog, DialogContent, DialogTrigger } from '../ui/dialog';
+import { Dialog, DialogContent } from '../ui/dialog';
 import { Issue } from '@/lib/schemas/projects';
 import { EditorState, SerializedEditorState, $getRoot } from 'lexical';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 const activeFormFieldsDefaultState = { name: false, description: false };
 
@@ -36,20 +37,18 @@ const TaskFormContext = createContext<{
 
 type TaskFormProps = {
   action: (formData: FormData) => Promise<void>;
-  trigger: ReactNode;
   children: ReactNode;
   issue?: Issue;
 };
 
 export const TaskFormProvider = ({
   action,
-  trigger,
   children,
   issue,
 }: TaskFormProps) => {
-  const [open, setOpen] = useState(false);
-  console.log(issue);
-
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
   const [formState, setFormState] = useState<CreateDialogFormState>(
     issue
       ? {
@@ -80,9 +79,14 @@ export const TaskFormProvider = ({
     setActiveFormFields(activeFormFieldsDefaultState);
   };
 
+  const handleClose = () => {
+    const searchParams = new URLSearchParams(params.toString());
+    searchParams.delete('open_issue_id');
+    router.push(`${pathname}?${searchParams.toString()}`);
+  };
+
   return (
-    <Dialog onOpenChange={() => setOpen((o) => !o)} open={open}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+    <Dialog open={true} onOpenChange={handleClose}>
       <DialogContent
         className="flex min-w-4xl w-full min-h-96"
         onClick={onDeactivateInputs}
@@ -104,8 +108,7 @@ export const TaskFormProvider = ({
             }
 
             await action(formData);
-            setOpen(false);
-            setFormState(initialState);
+            handleClose();
           }}
           className="flex w-full"
         >
