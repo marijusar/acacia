@@ -54,9 +54,7 @@ export default async function ProjectLayout({
         user={authStatus.user}
       />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <div className="h-16 w-full bg-secondary flex items-center justify-center sticky">
-          <Input placeholder="Search.." className="max-w-100" />
-        </div>
+        <div className="h-16 w-full bg-secondary flex items-center justify-center sticky"></div>
         <div className="w-24"> </div>
         <div className="flex flex-1">
           <div className="flex pt-4 pb-4 pr-8 pl-8 flex-1 flex-col bg-background overflow-auto">
