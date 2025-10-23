@@ -7,21 +7,26 @@ import (
 
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
+	"github.com/sirupsen/logrus"
 )
 
 // OpenAIProvider implements the Provider interface for OpenAI
 type OpenAIProvider struct {
 	client *openai.Client
+	logger *logrus.Logger
+	tools  *ToolRegistry
 }
 
 // OpenAIProviderFactory implements ProviderFactory for OpenAI
 type OpenAIProviderFactory struct{}
 
 // New creates a new OpenAI provider with the given API key
-func (f *OpenAIProviderFactory) New(apiKey string) Provider {
+func (f *OpenAIProviderFactory) New(apiKey string, logger *logrus.Logger, tools *ToolRegistry) LLMResponseStreamer {
 	client := openai.NewClient(option.WithAPIKey(apiKey))
 	return &OpenAIProvider{
 		client: &client,
+		logger: logger,
+		tools:  tools,
 	}
 }
 

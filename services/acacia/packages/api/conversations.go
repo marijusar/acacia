@@ -137,6 +137,7 @@ func (c *ConversationsController) SendMessage(w http.ResponseWriter, r *http.Req
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// Get streaming channel from conversation service
+	// Context already has user_id from auth middleware
 	streamChan, err := c.conversationService.ReplyToMessage(r.Context(), req.ConversationID, req.Content)
 	if err != nil {
 		c.logger.WithError(err).Error("Failed to start reply stream")

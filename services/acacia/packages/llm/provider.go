@@ -3,6 +3,8 @@ package llm
 import (
 	"context"
 	"errors"
+
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -26,10 +28,15 @@ type StreamChunk struct {
 }
 
 // Provider defines the interface that all LLM providers must implement
-type Provider interface {
+type LLMResponseStreamer interface {
 	// StreamCompletion generates a completion with streaming support
 	// Returns a channel that will receive chunks of the response
 	StreamCompletion(ctx context.Context, messages []Message, model string) (<-chan StreamChunk, error)
+
+	// StreamCompletionWithTools generates a completion with tool calling support
+	// Context carries user_id and other request context from auth middleware
+	// Returns a channel that will receive chunks of the response
+	StreamCompletionWithTools(ctx context.Context, messages []Message, model string) (<-chan StreamChunk, error)
 
 	// GetProviderName returns the name of the provider (e.g., "openai", "anthropic")
 	GetProviderName() string
@@ -37,28 +44,30 @@ type Provider interface {
 
 // ProviderFactory creates provider instances with an API key
 type ProviderFactory interface {
-	New(apiKey string) Provider
+	New(apiKey string, logger *logrus.Logger, tools *ToolRegistry) LLMResponseStreamer
 }
 
 // ProviderRegistry manages available LLM provider factories
 type ProviderRegistry struct {
 	factories map[string]ProviderFactory
+	logger    *logrus.Logger
 }
 
 // NewProviderRegistry creates a new provider registry with all provider factories
-func NewProviderRegistry() *ProviderRegistry {
+func NewProviderRegistry(logger *logrus.Logger) *ProviderRegistry {
 	return &ProviderRegistry{
 		factories: map[string]ProviderFactory{
 			"openai": &OpenAIProviderFactory{},
 		},
+		logger: logger,
 	}
 }
 
 // GetProvider creates a provider instance with the given API key
-func (r *ProviderRegistry) GetProvider(name string, apiKey string) (Provider, error) {
+func (r *ProviderRegistry) GetProvider(name string, apiKey string, tools *ToolRegistry) (LLMResponseStreamer, error) {
 	factory, ok := r.factories[name]
 	if !ok {
 		return nil, ErrProviderNotSupported
 	}
-	return factory.New(apiKey), nil
+	return factory.New(apiKey, r.logger, tools), nil
 }

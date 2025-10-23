@@ -9,6 +9,7 @@ import (
 	"acacia/packages/routes"
 	"acacia/packages/services"
 	"acacia/packages/storage"
+	"acacia/packages/tools"
 	"context"
 	"database/sql"
 	"errors"
@@ -52,13 +53,24 @@ func NewServer(d *Database, l *logrus.Logger, env *Environment) *Server {
 	authzMiddleware := auth.NewAuthorizationMiddleware(d.Queries, l)
 
 	// Initialize LLM provider registry
-	providerRegistry := llm.NewProviderRegistry()
+	providerRegistry := llm.NewProviderRegistry(l)
+
+	// Initialize tools for LLM
+	toolsList := []llm.Tool{
+		tools.NewGetUserProjectsTool(d.Queries, l),
+		tools.NewGetProjectDetailsTool(d.Queries, l),
+		tools.NewGetIssueDetailsTool(d.Queries, l),
+		tools.NewSearchIssuesTool(d.Queries, l),
+	}
+	toolRegistry := llm.NewToolRegistry(toolsList)
+	l.WithField("tool_count", len(toolsList)).Info("Tool registry initialized")
 
 	// Initialize conversation service
 	conversationService := services.NewConversationService(
 		d.Queries,
 		providerRegistry,
 		encryptionService,
+		toolRegistry,
 		l,
 	)
 

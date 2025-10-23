@@ -22,6 +22,7 @@ type ConversationService struct {
 	queries           *db.Queries
 	providerRegistry  *llm.ProviderRegistry
 	encryptionService *crypto.EncryptionService
+	toolRegistry      *llm.ToolRegistry
 	logger            *logrus.Logger
 }
 
@@ -29,12 +30,14 @@ func NewConversationService(
 	queries *db.Queries,
 	providerRegistry *llm.ProviderRegistry,
 	encryptionService *crypto.EncryptionService,
+	toolRegistry *llm.ToolRegistry,
 	logger *logrus.Logger,
 ) *ConversationService {
 	return &ConversationService{
 		queries:           queries,
 		providerRegistry:  providerRegistry,
 		encryptionService: encryptionService,
+		toolRegistry:      toolRegistry,
 		logger:            logger,
 	}
 }
@@ -43,8 +46,9 @@ func NewConversationService(
 // 1. Saves user message to DB
 // 2. Gets conversation details and history
 // 3. Gets team's API key for the provider
-// 4. Streams LLM response
-// 5. Saves assistant response after streaming completes
+// 4. Discovers MCP tools
+// 5. Streams LLM response with tool calling support
+// 6. Saves assistant response after streaming completes
 func (s *ConversationService) ReplyToMessage(
 	ctx context.Context,
 	conversationID int64,
@@ -108,14 +112,15 @@ func (s *ConversationService) ReplyToMessage(
 	}
 
 	// Get LLM provider instance
-	provider, err := s.providerRegistry.GetProvider(conversation.Provider, decryptedKey)
+	provider, err := s.providerRegistry.GetProvider(conversation.Provider, decryptedKey, s.toolRegistry)
 	if err != nil {
 		s.logger.WithError(err).WithField("provider", conversation.Provider).Error("Failed to get provider")
 		return nil, fmt.Errorf("failed to get provider: %w", err)
 	}
 
-	// Start streaming from LLM provider
-	streamChan, err := provider.StreamCompletion(ctx, messages, conversation.Model)
+	// Start streaming from LLM provider with tool registry
+	// Context carries user_id from auth middleware for authorization
+	streamChan, err := provider.StreamCompletionWithTools(ctx, messages, conversation.Model)
 	if err != nil {
 		s.logger.WithError(err).Error("Failed to start streaming")
 		return nil, fmt.Errorf("failed to start streaming: %w", err)
